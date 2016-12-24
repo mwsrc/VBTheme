@@ -1,0 +1,2150 @@
+Imports System.Drawing.Drawing2D
+Imports System.ComponentModel
+Imports System.Runtime.InteropServices
+
+MustInherit Class Theme
+    Inherits ContainerControl
+
+#Region " Initialization "
+
+    Protected G As Graphics
+    Sub New()
+        SetStyle(DirectCast(139270, ControlStyles), True)
+    End Sub
+
+    Private ParentIsForm As Boolean
+    Protected Overrides Sub OnHandleCreated(ByVal e As EventArgs)
+        Dock = DockStyle.Fill
+        ParentIsForm = TypeOf Parent Is Form
+        If ParentIsForm Then
+            If Not _TransparencyKey = Color.Empty Then ParentForm.TransparencyKey = _TransparencyKey
+            ParentForm.FormBorderStyle = FormBorderStyle.None
+        End If
+        MyBase.OnHandleCreated(e)
+    End Sub
+
+    Overrides Property Text() As String
+        Get
+            Return MyBase.Text
+        End Get
+        Set(ByVal v As String)
+            MyBase.Text = v
+            Invalidate()
+        End Set
+    End Property
+#End Region
+
+#Region " Sizing and Movement "
+
+    Private _Resizable As Boolean = True
+    Property Resizable() As Boolean
+        Get
+            Return _Resizable
+        End Get
+        Set(ByVal value As Boolean)
+            _Resizable = value
+        End Set
+    End Property
+
+    Private _MoveHeight As Integer = 24
+    Property MoveHeight() As Integer
+        Get
+            Return _MoveHeight
+        End Get
+        Set(ByVal v As Integer)
+            _MoveHeight = v
+            Header = New Rectangle(7, 7, Width - 14, _MoveHeight - 7)
+        End Set
+    End Property
+
+    Private Flag As IntPtr
+    Protected Overrides Sub OnMouseDown(ByVal e As MouseEventArgs)
+        If Not e.Button = MouseButtons.Left Then Return
+        If ParentIsForm Then If ParentForm.WindowState = FormWindowState.Maximized Then Return
+
+        If Header.Contains(e.Location) Then
+            Flag = New IntPtr(2)
+        ElseIf Current.Position = 0 Or Not _Resizable Then
+            Return
+        Else
+            Flag = New IntPtr(Current.Position)
+        End If
+
+        Capture = False
+        DefWndProc(Message.Create(Parent.Handle, 161, Flag, Nothing))
+
+        MyBase.OnMouseDown(e)
+    End Sub
+
+    Private Structure Pointer
+        ReadOnly Cursor As Cursor, Position As Byte
+        Sub New(ByVal c As Cursor, ByVal p As Byte)
+            Cursor = c
+            Position = p
+        End Sub
+    End Structure
+
+    Private F1, F2, F3, F4 As Boolean, PTC As Point
+    Private Function GetPointer() As Pointer
+        PTC = PointToClient(MousePosition)
+        F1 = PTC.X < 7
+        F2 = PTC.X > Width - 7
+        F3 = PTC.Y < 7
+        F4 = PTC.Y > Height - 7
+
+        If F1 And F3 Then Return New Pointer(Cursors.SizeNWSE, 13)
+        If F1 And F4 Then Return New Pointer(Cursors.SizeNESW, 16)
+        If F2 And F3 Then Return New Pointer(Cursors.SizeNESW, 14)
+        If F2 And F4 Then Return New Pointer(Cursors.SizeNWSE, 17)
+        If F1 Then Return New Pointer(Cursors.SizeWE, 10)
+        If F2 Then Return New Pointer(Cursors.SizeWE, 11)
+        If F3 Then Return New Pointer(Cursors.SizeNS, 12)
+        If F4 Then Return New Pointer(Cursors.SizeNS, 15)
+        Return New Pointer(Cursors.Default, 0)
+    End Function
+
+    Private Current, Pending As Pointer
+    Private Sub SetCurrent()
+        Pending = GetPointer()
+        If Current.Position = Pending.Position Then Return
+        Current = GetPointer()
+        Cursor = Current.Cursor
+    End Sub
+
+    Protected Overrides Sub OnMouseMove(ByVal e As MouseEventArgs)
+        If _Resizable Then SetCurrent()
+        MyBase.OnMouseMove(e)
+    End Sub
+
+    Protected Header As Rectangle
+    Protected Overrides Sub OnSizeChanged(ByVal e As EventArgs)
+        If Width = 0 OrElse Height = 0 Then Return
+        Header = New Rectangle(7, 7, Width - 14, _MoveHeight - 7)
+        Invalidate()
+        MyBase.OnSizeChanged(e)
+    End Sub
+
+#End Region
+
+#Region " Convienence "
+
+    MustOverride Sub PaintHook()
+    Protected NotOverridable Overrides Sub OnPaint(ByVal e As PaintEventArgs)
+        If Width = 0 OrElse Height = 0 Then Return
+        G = e.Graphics
+        PaintHook()
+    End Sub
+
+    Private _TransparencyKey As Color
+    Property TransparencyKey() As Color
+        Get
+            Return _TransparencyKey
+        End Get
+        Set(ByVal v As Color)
+            _TransparencyKey = v
+            Invalidate()
+        End Set
+    End Property
+
+    Private _Image As Image
+    Property Image() As Image
+        Get
+            Return _Image
+        End Get
+        Set(ByVal value As Image)
+            _Image = value
+            Invalidate()
+        End Set
+    End Property
+    ReadOnly Property ImageWidth() As Integer
+        Get
+            If _Image Is Nothing Then Return 0
+            Return _Image.Width
+        End Get
+    End Property
+
+    Private _Size As Size
+    Private _Rectangle As Rectangle
+    Private _Gradient As LinearGradientBrush
+    Private _Brush As SolidBrush
+
+    Protected Sub DrawCorners(ByVal c As Color, ByVal rect As Rectangle)
+        _Brush = New SolidBrush(c)
+        G.FillRectangle(_Brush, rect.X, rect.Y, 1, 1)
+        G.FillRectangle(_Brush, rect.X + (rect.Width - 1), rect.Y, 1, 1)
+        G.FillRectangle(_Brush, rect.X, rect.Y + (rect.Height - 1), 1, 1)
+        G.FillRectangle(_Brush, rect.X + (rect.Width - 1), rect.Y + (rect.Height - 1), 1, 1)
+    End Sub
+
+    Protected Sub DrawBorders(ByVal p1 As Pen, ByVal p2 As Pen, ByVal rect As Rectangle)
+        G.DrawRectangle(p1, rect.X, rect.Y, rect.Width - 1, rect.Height - 1)
+        G.DrawRectangle(p2, rect.X + 1, rect.Y + 1, rect.Width - 3, rect.Height - 3)
+    End Sub
+
+    Protected Sub DrawText(ByVal a As HorizontalAlignment, ByVal c As Color, ByVal x As Integer)
+        DrawText(a, c, x, 0)
+    End Sub
+    Protected Sub DrawText(ByVal a As HorizontalAlignment, ByVal c As Color, ByVal x As Integer, ByVal y As Integer)
+        If String.IsNullOrEmpty(Text) Then Return
+        _Size = G.MeasureString(Text, Font).ToSize
+        _Brush = New SolidBrush(c)
+
+        Select Case a
+            Case HorizontalAlignment.Left
+                G.DrawString(Text, Font, _Brush, x, _MoveHeight \ 2 - _Size.Height \ 2 + y)
+            Case HorizontalAlignment.Right
+                G.DrawString(Text, Font, _Brush, Width - _Size.Width - x, _MoveHeight \ 2 - _Size.Height \ 2 + y)
+            Case HorizontalAlignment.Center
+                G.DrawString(Text, Font, _Brush, Width \ 2 - _Size.Width \ 2 + x, _MoveHeight \ 2 - _Size.Height \ 2 + y)
+        End Select
+    End Sub
+
+    Protected Sub DrawIcon(ByVal a As HorizontalAlignment, ByVal x As Integer)
+        DrawIcon(a, x, 0)
+    End Sub
+    Protected Sub DrawIcon(ByVal a As HorizontalAlignment, ByVal x As Integer, ByVal y As Integer)
+        If _Image Is Nothing Then Return
+        Select Case a
+            Case HorizontalAlignment.Left
+                G.DrawImage(_Image, x, _MoveHeight \ 2 - _Image.Height \ 2 + y)
+            Case HorizontalAlignment.Right
+                G.DrawImage(_Image, Width - _Image.Width - x, _MoveHeight \ 2 - _Image.Height \ 2 + y)
+            Case HorizontalAlignment.Center
+                G.DrawImage(_Image, Width \ 2 - _Image.Width \ 2, _MoveHeight \ 2 - _Image.Height \ 2)
+        End Select
+    End Sub
+
+    Protected Sub DrawGradient(ByVal c1 As Color, ByVal c2 As Color, ByVal x As Integer, ByVal y As Integer, ByVal width As Integer, ByVal height As Integer, ByVal angle As Single)
+        _Rectangle = New Rectangle(x, y, width, height)
+        _Gradient = New LinearGradientBrush(_Rectangle, c1, c2, angle)
+        G.FillRectangle(_Gradient, _Rectangle)
+    End Sub
+
+#End Region
+
+End Class
+MustInherit Class ThemeControl
+    Inherits Control
+    Private Items As New Dictionary(Of String, Color)
+#Region " Initialization "
+    Public Const UITypeEditor As String = "System.Drawing.Design.UITypeEditor, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
+    Public Const MultilineEditor As String = "System.ComponentModel.Design.MultilineStringEditor, System.Design, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
+    Protected G As Graphics, B As Bitmap
+    Sub New()
+        SetStyle(DirectCast(139270, ControlStyles), True)
+        B = New Bitmap(1, 1)
+        G = Graphics.FromImage(B)
+    End Sub
+
+    Sub AllowTransparent()
+        SetStyle(ControlStyles.Opaque, False)
+        SetStyle(ControlStyles.SupportsTransparentBackColor, True)
+    End Sub
+
+    Overrides Property Text() As String
+        Get
+            Return MyBase.Text
+        End Get
+        Set(ByVal v As String)
+            MyBase.Text = v
+            Invalidate()
+        End Set
+    End Property
+#End Region
+
+#Region " Mouse Handling "
+
+    Protected Enum State As Byte
+        MouseNone = 0
+        MouseOver = 1
+        MouseDown = 2
+    End Enum
+
+    Protected MouseState As State
+    Protected Overrides Sub OnMouseLeave(ByVal e As EventArgs)
+        ChangeMouseState(State.MouseNone)
+        MyBase.OnMouseLeave(e)
+    End Sub
+    Protected Overrides Sub OnMouseEnter(ByVal e As EventArgs)
+        ChangeMouseState(State.MouseOver)
+        MyBase.OnMouseEnter(e)
+    End Sub
+    Protected Overrides Sub OnMouseUp(ByVal e As MouseEventArgs)
+        ChangeMouseState(State.MouseOver)
+        MyBase.OnMouseUp(e)
+    End Sub
+    Protected Overrides Sub OnMouseDown(ByVal e As MouseEventArgs)
+        If e.Button = MouseButtons.Left Then ChangeMouseState(State.MouseDown)
+        MyBase.OnMouseDown(e)
+    End Sub
+
+    Protected Function GetColor(ByVal name As String) As Color
+        Return Items(name)
+    End Function
+
+    Protected Sub SetColor(ByVal name As String, ByVal color As Color)
+        If Items.ContainsKey(name) Then Items(name) = color Else Items.Add(name, color)
+    End Sub
+    Protected Sub SetColor(ByVal name As String, ByVal r As Byte, ByVal g As Byte, ByVal b As Byte)
+        SetColor(name, Color.FromArgb(r, g, b))
+    End Sub
+    Protected Sub SetColor(ByVal name As String, ByVal a As Byte, ByVal r As Byte, ByVal g As Byte, ByVal b As Byte)
+        SetColor(name, Color.FromArgb(a, r, g, b))
+    End Sub
+    Protected Sub SetColor(ByVal name As String, ByVal a As Byte, ByVal color As Color)
+        SetColor(name, color.FromArgb(a, color))
+    End Sub
+
+    Private Sub ChangeMouseState(ByVal e As State)
+        MouseState = e
+        Invalidate()
+    End Sub
+
+#End Region
+
+#Region " Convienence "
+
+    MustOverride Sub PaintHook()
+    Protected NotOverridable Overrides Sub OnPaint(ByVal e As PaintEventArgs)
+        If Width = 0 OrElse Height = 0 Then Return
+        PaintHook()
+        e.Graphics.DrawImage(B, 0, 0)
+    End Sub
+
+    Protected Overrides Sub OnSizeChanged(ByVal e As EventArgs)
+        If Not Width = 0 AndAlso Not Height = 0 Then
+            B = New Bitmap(Width, Height)
+            G = Graphics.FromImage(B)
+            Invalidate()
+        End If
+        MyBase.OnSizeChanged(e)
+    End Sub
+
+    Private _NoRounding As Boolean
+    Property NoRounding() As Boolean
+        Get
+            Return _NoRounding
+        End Get
+        Set(ByVal v As Boolean)
+            _NoRounding = v
+            Invalidate()
+        End Set
+    End Property
+
+    Private _Image As Image
+    Property Image() As Image
+        Get
+            Return _Image
+        End Get
+        Set(ByVal value As Image)
+            _Image = value
+            Invalidate()
+        End Set
+    End Property
+    ReadOnly Property ImageWidth() As Integer
+        Get
+            If _Image Is Nothing Then Return 0
+            Return _Image.Width
+        End Get
+    End Property
+    ReadOnly Property ImageTop() As Integer
+        Get
+            If _Image Is Nothing Then Return 0
+            Return Height \ 2 - _Image.Height \ 2
+        End Get
+    End Property
+
+    Private _Size As Size
+    Private _Rectangle As Rectangle
+    Private _Gradient As LinearGradientBrush
+    Private _Brush As SolidBrush
+
+    Protected Sub DrawCorners(ByVal c As Color, ByVal rect As Rectangle)
+        If _NoRounding Then Return
+
+        B.SetPixel(rect.X, rect.Y, c)
+        B.SetPixel(rect.X + (rect.Width - 1), rect.Y, c)
+        B.SetPixel(rect.X, rect.Y + (rect.Height - 1), c)
+        B.SetPixel(rect.X + (rect.Width - 1), rect.Y + (rect.Height - 1), c)
+    End Sub
+
+    Protected Sub DrawBorders(ByVal p1 As Pen, ByVal p2 As Pen, ByVal rect As Rectangle)
+        G.DrawRectangle(p1, rect.X, rect.Y, rect.Width - 1, rect.Height - 1)
+        G.DrawRectangle(p2, rect.X + 1, rect.Y + 1, rect.Width - 3, rect.Height - 3)
+    End Sub
+
+    Protected Sub DrawText(ByVal a As HorizontalAlignment, ByVal c As Color, ByVal x As Integer)
+        DrawText(a, c, x, 0)
+    End Sub
+    Protected Sub DrawText(ByVal a As HorizontalAlignment, ByVal c As Color, ByVal x As Integer, ByVal y As Integer)
+        If String.IsNullOrEmpty(Text) Then Return
+        _Size = G.MeasureString(Text, Font).ToSize
+        _Brush = New SolidBrush(c)
+
+        Select Case a
+            Case HorizontalAlignment.Left
+                G.DrawString(Text, Font, _Brush, x, Height \ 2 - _Size.Height \ 2 + y)
+            Case HorizontalAlignment.Right
+                G.DrawString(Text, Font, _Brush, Width - _Size.Width - x, Height \ 2 - _Size.Height \ 2 + y)
+            Case HorizontalAlignment.Center
+                G.DrawString(Text, Font, _Brush, Width \ 2 - _Size.Width \ 2 + x, Height \ 2 - _Size.Height \ 2 + y)
+        End Select
+    End Sub
+
+    Protected Sub DrawIcon(ByVal a As HorizontalAlignment, ByVal x As Integer)
+        DrawIcon(a, x, 0)
+    End Sub
+    Protected Sub DrawIcon(ByVal a As HorizontalAlignment, ByVal x As Integer, ByVal y As Integer)
+        If _Image Is Nothing Then Return
+        Select Case a
+            Case HorizontalAlignment.Left
+                G.DrawImage(_Image, x, Height \ 2 - _Image.Height \ 2 + y)
+            Case HorizontalAlignment.Right
+                G.DrawImage(_Image, Width - _Image.Width - x, Height \ 2 - _Image.Height \ 2 + y)
+            Case HorizontalAlignment.Center
+                G.DrawImage(_Image, Width \ 2 - _Image.Width \ 2, Height \ 2 - _Image.Height \ 2)
+        End Select
+    End Sub
+
+    Protected Sub DrawGradient(ByVal c1 As Color, ByVal c2 As Color, ByVal x As Integer, ByVal y As Integer, ByVal width As Integer, ByVal height As Integer, ByVal angle As Single)
+        _Rectangle = New Rectangle(x, y, width - 2, height)
+        _Gradient = New LinearGradientBrush(_Rectangle, c1, c2, angle)
+        G.FillRectangle(_Gradient, _Rectangle)
+    End Sub
+#End Region
+
+End Class
+MustInherit Class ThemeContainerControl
+    Inherits ContainerControl
+
+#Region " Initialization "
+
+    Protected G As Graphics, B As Bitmap
+    Sub New()
+        SetStyle(DirectCast(139270, ControlStyles), True)
+        B = New Bitmap(1, 1)
+        G = Graphics.FromImage(B)
+    End Sub
+
+    Sub AllowTransparent()
+        SetStyle(ControlStyles.Opaque, False)
+        SetStyle(ControlStyles.SupportsTransparentBackColor, True)
+    End Sub
+
+#End Region
+
+#Region " Convienence "
+
+    MustOverride Sub PaintHook()
+    Protected NotOverridable Overrides Sub OnPaint(ByVal e As PaintEventArgs)
+        If Width = 0 OrElse Height = 0 Then Return
+        PaintHook()
+        e.Graphics.DrawImage(B, 0, 0)
+    End Sub
+
+    Protected Overrides Sub OnSizeChanged(ByVal e As EventArgs)
+        If Not Width = 0 AndAlso Not Height = 0 Then
+            B = New Bitmap(Width, Height)
+            G = Graphics.FromImage(B)
+            Invalidate()
+        End If
+        MyBase.OnSizeChanged(e)
+    End Sub
+
+    Private _NoRounding As Boolean
+    Property NoRounding() As Boolean
+        Get
+            Return _NoRounding
+        End Get
+        Set(ByVal v As Boolean)
+            _NoRounding = v
+            Invalidate()
+        End Set
+    End Property
+
+    Private _Rectangle As Rectangle
+    Private _Gradient As LinearGradientBrush
+
+    Protected Sub DrawCorners(ByVal c As Color, ByVal rect As Rectangle)
+        If _NoRounding Then Return
+        B.SetPixel(rect.X, rect.Y, c)
+        B.SetPixel(rect.X + (rect.Width - 1), rect.Y, c)
+        B.SetPixel(rect.X, rect.Y + (rect.Height - 1), c)
+        B.SetPixel(rect.X + (rect.Width - 1), rect.Y + (rect.Height - 1), c)
+    End Sub
+
+    Protected Sub DrawBorders(ByVal p1 As Pen, ByVal p2 As Pen, ByVal rect As Rectangle)
+
+        G.DrawRectangle(p2, rect.X + 1, rect.Y + 1, rect.Width - 3, rect.Height - 3)
+    End Sub
+
+    Protected Sub DrawGradient(ByVal c1 As Color, ByVal c2 As Color, ByVal x As Integer, ByVal y As Integer, ByVal width As Integer, ByVal height As Integer, ByVal angle As Single)
+        _Rectangle = New Rectangle(x, y, width, height)
+        _Gradient = New LinearGradientBrush(_Rectangle, c1, c2, angle)
+        G.FillRectangle(_Gradient, _Rectangle)
+    End Sub
+#End Region
+
+End Class
+<DefaultEvent("Load")> _
+Class NewTheme
+    Inherits Theme
+    Sub New()
+        MoveHeight = 20
+        TransparencyKey = Color.Fuchsia
+        ForeColor = Color.FromArgb(66, 130, 181)
+        BackColor = Color.FromArgb(40, 40, 40)
+        Dim F As New Font("Verdana", 8S) : Font = F
+        Me.Resizable = True
+    End Sub
+    Event Load()
+    Event Closing()
+    Dim WithEvents Close As New NewMenuButton
+    Dim WithEvents Minimise As New NewMenuButton
+    Dim BGColor As Color = Color.FromArgb(40, 40, 40) : Dim G1 As Color = Color.FromArgb(65, 65, 65) : Dim G2 As Color = Color.FromArgb(30, 30, 30) : Dim F As Color = Color.Fuchsia
+    Dim Seperator As Pen = New Pen(Color.Black)
+    Dim B As Pen = Pens.Black
+    Dim i As New Bitmap(20, 20)
+    Dim j As Icon
+    Dim Bools() As Boolean = New Boolean() {False, True, True, True, True} 'Icon (once), Icon (multi), Load (once), minimise, close
+    Overrides Sub PaintHook()
+        On Error Resume Next
+        G.Clear(BGColor) 'Background
+        If Bools(1) Then
+            j = ParentForm.Icon
+            Bools(0) = True
+            Bools(1) = False
+        End If
+        DrawGradient(G1, G2, 0, 0, Width, 20, 90S) 'Menu Bar
+        G.DrawLine(Seperator, 0, 20, Width, 20) 'Menu bar seperator line
+        If Bools(0) Then
+            Dim a = Graphics.FromImage(i)
+            Dim fh As Rectangle = New Rectangle(0, 0, 20, 20)
+            Dim gr As LinearGradientBrush = New LinearGradientBrush(fh, G1, G2, 90S)
+            a.FillRectangle(gr, fh)
+            a.DrawImage(j.ToBitmap, 0, 0, 18, 18)
+            Bools(0) = False
+            ParentForm.Icon = j
+        End If
+        G.DrawImage(Image.FromHbitmap(i.GetHbitmap), 0, 0)
+        G.DrawRectangle(B, ClientRectangle.X, ClientRectangle.Y, ClientRectangle.Width - 1, ClientRectangle.Height - 1) 'Border
+        DrawCorners(F, ClientRectangle) 'Form corners
+        DrawText(HorizontalAlignment.Left, ForeColor, 20) 'Menu bar's text
+        Parent.Text = Me.Text
+        If Bools(4) Then
+            Close.Show()
+            Close.Size = New Size(20, 20)
+            Close.Location = New Point(Width - 23, 0)
+            Close.Text = "X"
+            Close.Parent = Me
+        Else
+            Close.Hide()
+        End If
+        If Bools(3) Then
+            Minimise.Show()
+            Minimise.Size = New Size(20, 20)
+            Minimise.Location = New Point(Width - 42, 0)
+            Minimise.Text = "_"
+            Minimise.Parent = Me
+        Else
+            Minimise.Hide()
+        End If
+    End Sub
+
+
+    Property icon() As Icon
+        Get
+            Return j
+        End Get
+        Set(ByVal value As Icon)
+            j = value
+            Bools(0) = True
+            Invalidate()
+        End Set
+    End Property
+
+    Property minimisebutton() As Boolean
+        Get
+            Return Bools(3)
+        End Get
+        Set(ByVal value As Boolean)
+            Bools(3) = value
+            Invalidate()
+        End Set
+    End Property
+
+    Property closebutton() As Boolean
+        Get
+            Return Bools(4)
+        End Get
+        Set(ByVal value As Boolean)
+            Bools(4) = value
+            Invalidate()
+        End Set
+    End Property
+
+    Private Sub a() Handles Me.Invalidated
+        If Bools(2) Then
+            RaiseEvent Load()
+            Bools(2) = False
+        End If
+    End Sub
+
+    Private Sub c() Handles Close.Click
+        RaiseEvent Closing()
+        End
+    End Sub
+
+    Private Sub d() Handles Minimise.Click
+        ParentForm.WindowState = FormWindowState.Minimized
+    End Sub
+
+End Class
+
+<DefaultEvent("IndexChanged")> _
+Class YesNoBar
+    Inherits ThemeControl
+    Event IndexChanged(ByVal sender As Object, ByVal e As EventArgs)
+    Shadows ForeColor As Color = Color.FromArgb(66, 130, 181)
+    Dim _VaL As Boolean = False
+
+    Property Value() As Boolean
+        Get
+            Return _VaL
+        End Get
+        Set(ByVal value As Boolean)
+            _VaL = value
+            Invalidate()
+        End Set
+    End Property
+
+    Sub New()
+        AllowTransparent()
+        Dim s As New Size(73, 20) : Size = s : MaximumSize = s : MinimumSize = s
+    End Sub
+
+    Public Overrides Sub PaintHook()
+        G.Clear(Parent.BackColor)
+        G.FillRectangle(New SolidBrush(Parent.BackColor), 0, 0, Width, Height)
+        G.FillRectangle(Brushes.Lime, 0, 0, CInt(Width / 2), Height)
+        G.FillRectangle(Brushes.Red, CInt(Width / 2), 0, CInt(Width - Width / 2), Height)
+        If _VaL Then
+            G.FillRectangle(New SolidBrush(Color.FromArgb(40, 40, 40)), CInt(Width / 2), 0, CInt(Width - Width / 2) + 2, Height)
+            G.DrawRectangle(New Pen(Color.FromArgb(40, 40, 40)), CInt(Width / 2), 0, CInt(Width - Width / 2), Height)
+            G.DrawString("Yes", Font, New SolidBrush(ForeColor), 8, 4)
+        Else
+            G.FillRectangle(New SolidBrush(Color.FromArgb(40, 40, 40)), 0, 0, CInt(Width / 2) + 2, Height)
+            G.DrawRectangle(New Pen(Color.FromArgb(40, 40, 40)), 0, 0, CInt(Width / 2), Height)
+            G.DrawString("No", Font, New SolidBrush(ForeColor), 44, 4)
+        End If
+        ' G.DrawRectangle(New Pen(Color.FromArgb(50, 50, 50)), 0, 0, Width - 1, Height - 1)
+        DrawBorders(New Pen(Color.FromArgb(0, 0, 0)), New Pen(Color.FromArgb(0, 0, 0)), New Rectangle(0, 0, Width, Height))
+    End Sub
+
+    Private Sub YesNoBar_click(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Click
+        _VaL = Not _VaL
+        RaiseEvent IndexChanged(sender, e)
+    End Sub
+End Class
+
+Class NewGroupbox
+    Inherits ThemeContainerControl
+
+    Public Overrides Sub PaintHook()
+        G.Clear(Color.FromArgb(40, 40, 40))
+        DrawGradient(Color.FromArgb(65, 65, 65), Color.FromArgb(42, 42, 42), 0, 0, Width, 15, 90S)
+        G.DrawRectangle(New Pen(Color.FromArgb(65, 65, 65)), 0, 0, Width - 1, Height - 1)
+        G.FillRectangle(New SolidBrush(Color.FromArgb(40, 40, 40)), Width - 1, 0, 1, 1)
+        G.FillRectangle(New SolidBrush(Color.FromArgb(40, 40, 40)), 0, Height - 1, 1, 1)
+        G.FillRectangle(New SolidBrush(Color.FromArgb(40, 40, 40)), Width - 1, Height - 1, 1, 1)
+        G.FillRectangle(New SolidBrush(Color.FromArgb(40, 40, 40)), 0, 0, 1, 1)
+        G.DrawString(Text, Parent.Font, New SolidBrush(Parent.ForeColor), 5, 1)
+        BackColor = Color.FromArgb(40, 40, 40)
+    End Sub
+End Class
+
+Class NewButton
+    Inherits ThemeControl
+
+    Sub New()
+        ForeColor = Color.FromArgb(66, 130, 181)
+    End Sub
+
+    Dim G1 As Color = Color.FromArgb(50, 50, 50) : Dim G2 As Color = Color.FromArgb(42, 42, 42) : Dim G3 As Color = Color.Gray
+    Dim G4 As Color = Color.FromArgb(17, 89, 119) : Dim Bl As Pen = Pens.Black : Dim G5 As Color = Color.FromArgb(28, 107, 144)
+    Dim N As Color = Color.FromArgb(40, 40, 40)
+
+    Overrides Sub PaintHook()
+        G.Clear(N) 'Temporary, gradient will cover it
+
+        If MouseState = State.MouseNone Then 'Draws a gradient depending on the mousestate
+            DrawGradient(G1, G2, 0, 0, Width, Height, 90S)
+        ElseIf MouseState = State.MouseOver Then
+            If Pover Then DrawGradient(G1, G3, 0, 0, Width, Height, 90S)
+            If Not Pover Then DrawGradient(G1, G2, 0, 0, Width, Height, 90S)
+        ElseIf MouseState = State.MouseDown Then
+            DrawGradient(G2, G1, 0, 0, Width, Height, 90S)
+        End If
+
+        DrawText(HorizontalAlignment.Center, ForeColor, 0) 'Draws the text...
+        G.DrawRectangle(Bl, ClientRectangle.X, ClientRectangle.Y, ClientRectangle.Width - 1, ClientRectangle.Height - 1) 'Border
+    End Sub
+    Private Pover = True
+    Public Property ColorMouseOn() As Boolean
+        Get
+            Return Pover
+        End Get
+        Set(ByVal value As Boolean)
+            Pover = value
+        End Set
+    End Property
+End Class
+
+Class NewProgressBar
+    Inherits ThemeControl
+
+    Private _Maximum As Integer = 100
+    Property Maximum() As Integer
+        Get
+            Return _Maximum
+        End Get
+        Set(ByVal v As Integer)
+            If v < 1 Then v = 1
+            If v < _Value Then _Value = v
+
+            _Maximum = v
+            Invalidate()
+        End Set
+    End Property
+
+    Private _Value As Integer
+    Property Value() As Integer
+        Get
+            Return _Value
+        End Get
+        Set(ByVal v As Integer)
+            If v > _Maximum Then v = _Maximum
+
+            _Value = v
+            Invalidate()
+        End Set
+    End Property
+
+    Sub New()
+        AllowTransparent()
+        ForeColor = Color.FromArgb(66, 130, 181)
+    End Sub
+
+    Dim Border As New Pen(Color.Black) : Dim T As Color = Color.Transparent
+    Dim BackClr As Color = Color.FromArgb(30, 30, 30) : Dim UpperColor As New SolidBrush(Color.FromArgb(50, 50, 50)) : Dim LowerColor As New SolidBrush(Color.FromArgb(42, 42, 42))
+
+    Overrides Sub PaintHook()
+        G.Clear(BackClr) 'Background color of the control
+
+        G.FillRectangle(LowerColor, 1, 1, CInt((_Value / _Maximum) * Width), Height - 2) '      \
+        G.FillRectangle(UpperColor, 1, 1, CInt((_Value / _Maximum) * Width), (Height - 2) \ 2) ' > Draw the colors and the border
+        G.DrawRectangle(Border, 0, 0, Width - 1, Height - 1) '                                  /
+
+        DrawText(HorizontalAlignment.Center, ForeColor, 0) 'Text
+
+        DrawCorners(BackClr, ClientRectangle) 'Corners..
+    End Sub
+End Class
+
+Class NewListbox : Inherits Control
+    Public WithEvents lstbox As New ListBox
+    Private __Items As String() = {""}
+
+    Protected Overrides Sub OnPaintBackground(ByVal pevent As System.Windows.Forms.PaintEventArgs)
+    End Sub
+    Protected Overrides Sub OnSizeChanged(ByVal e As System.EventArgs)
+        MyBase.OnSizeChanged(e)
+        lstbox.Size = New Size(Width - 6, Height - 6)
+        Invalidate()
+    End Sub
+    Protected Overrides Sub OnBackColorChanged(ByVal e As System.EventArgs)
+        MyBase.OnBackColorChanged(e)
+        lstbox.BackColor = BackColor
+        Invalidate()
+    End Sub
+    Protected Overrides Sub OnForeColorChanged(ByVal e As System.EventArgs)
+        MyBase.OnForeColorChanged(e)
+        lstbox.ForeColor = ForeColor
+        Invalidate()
+    End Sub
+    Protected Overrides Sub OnFontChanged(ByVal e As System.EventArgs)
+        MyBase.OnFontChanged(e)
+        lstbox.Font = Font
+    End Sub
+    Protected Overrides Sub OnGotFocus(ByVal e As System.EventArgs)
+        MyBase.OnGotFocus(e)
+        lstbox.Focus()
+    End Sub
+
+    Public Property Items() As String()
+        Get
+            Return __Items
+            Invalidate()
+        End Get
+        Set(ByVal value As String())
+            __Items = value
+            lstbox.Items.Clear()
+            Invalidate()
+            lstbox.Items.AddRange(value)
+            Invalidate()
+        End Set
+    End Property
+    Public ReadOnly Property SelectedItem() As String
+        Get
+            Return lstbox.SelectedItem
+        End Get
+    End Property
+    Sub DrawItem(ByVal sender As Object, ByVal e As System.Windows.Forms.DrawItemEventArgs) Handles lstbox.DrawItem
+        Try
+            e.DrawBackground()
+            e.Graphics.DrawString(lstbox.Items(e.Index).ToString(), _
+            e.Font, New SolidBrush(lstbox.ForeColor), e.Bounds, StringFormat.GenericDefault)
+            e.DrawFocusRectangle()
+        Catch
+        End Try
+    End Sub
+    Sub AddRange(ByVal Items As Object())
+        lstbox.Items.Remove("")
+        lstbox.Items.AddRange(Items)
+        Invalidate()
+    End Sub
+    Sub AddItem(ByVal Item As Object)
+        lstbox.Items.Add(Item)
+        Invalidate()
+    End Sub
+    Sub NewListBox()
+        lstbox.Size = New Size(126, 96)
+        lstbox.BorderStyle = BorderStyle.None
+        lstbox.DrawMode = DrawMode.OwnerDrawVariable
+        lstbox.Location = New Point(4, 4)
+        lstbox.ForeColor = Color.FromArgb(216, 216, 216)
+        lstbox.BackColor = Color.FromArgb(38, 38, 38)
+        lstbox.Items.Clear()
+    End Sub
+
+    Sub New()
+        MyBase.New()
+
+        NewListBox()
+        Controls.Add(lstbox)
+
+        Size = New Size(131, 101)
+        BackColor = Color.FromArgb(38, 38, 38)
+        DoubleBuffered = True
+    End Sub
+
+    Protected Overrides Sub OnPaint(ByVal e As System.Windows.Forms.PaintEventArgs)
+        Dim G As Graphics = e.Graphics
+        MyBase.OnPaint(e)
+
+        G.Clear(BackColor)
+        G.FillRectangle(New SolidBrush(Color.FromArgb(37, 37, 37)), New Rectangle(1, 1, Width - 2, Height - 2))
+        G.DrawRectangle((New Pen(New SolidBrush(Color.Black))), New Rectangle(1, 1, Width - 3, Height - 3))
+        G.DrawRectangle((New Pen(New SolidBrush(Color.FromArgb(70, 70, 70)))), New Rectangle(0, 0, Width - 1, Height - 1))
+        G.DrawLine(New Pen(New SolidBrush(Color.FromArgb(45, 45, 45))), 0, 0, Width, 0)
+        G.DrawLine(New Pen(New SolidBrush(Color.FromArgb(45, 45, 45))), 0, 0, 0, Height)
+        G.DrawLine(New Pen(New SolidBrush(Color.FromArgb(45, 45, 45))), Width - 1, 0, Width - 1, Height)
+        G.DrawLine(New Pen(New SolidBrush(Color.FromArgb(30, 30, 30))), 2, 2, Width - 3, 2)
+    End Sub
+End Class
+
+Class NewImprovedSeperator
+    Inherits ThemeControl
+    Private _Color1 As Color = Color.FromArgb(66, 130, 181)
+    Public Property Color1() As Color
+        Get
+            Return _Color1
+        End Get
+        Set(ByVal value As Color)
+            _Color1 = value
+        End Set
+    End Property
+
+    Private _Color2 As Color = Color.Black
+    Public Property Color2() As Color
+        Get
+            Return _Color2
+        End Get
+        Set(ByVal value As Color)
+            _Color2 = value
+        End Set
+    End Property
+
+    Sub New()
+        AllowTransparent()
+        BackColor = Color.Transparent
+        Dim S As New Size(150, 10) : Size = S
+    End Sub
+
+    Overrides Sub PaintHook()
+        G.Clear(BackColor)
+
+        Dim K As New LinearGradientBrush(New Point(-1, 0), New Point(Width + 2, 0), Color.Empty, Color.Empty)
+        Dim KC As Color() = {Color.Transparent, _Color1, Color.Transparent}
+        Dim KP As Single() = {0, 0.5, 1}
+        K.InterpolationColors = New ColorBlend With {.Colors = KC, .Positions = KP}
+
+        G.FillRectangle(K, New Rectangle(0, Height / 2, Width, 2))
+    End Sub
+End Class
+
+Class NewSeperator
+    Inherits ThemeControl
+    Private _Color1 As Color = Color.FromArgb(66, 130, 181)
+    Public Property Color1() As Color
+        Get
+            Return _Color1
+        End Get
+        Set(ByVal value As Color)
+            _Color1 = value
+        End Set
+    End Property
+
+    Private _Color2 As Color = Color.Black
+    Public Property Color2() As Color
+        Get
+            Return _Color2
+        End Get
+        Set(ByVal value As Color)
+            _Color2 = value
+        End Set
+    End Property
+
+    Sub New()
+        AllowTransparent()
+        BackColor = Color.Transparent
+        Dim S As New Size(150, 10) : Size = S
+    End Sub
+    Public Overrides Sub PaintHook()
+        G.DrawLine(New Pen(_Color1), 0, Height \ 2, Width, Height \ 2)
+        G.DrawLine(New Pen(_Color2), 0, Height \ 2 + 1, Width, Height \ 2 + 1)
+    End Sub
+End Class
+
+Class NewMenuButton
+    Inherits ThemeControl
+
+    Sub New()
+        AllowTransparent()
+        ForeColor = Color.White
+        Dim S As New Size(15, 20) : Size = S
+    End Sub
+
+    Dim Bl As Pen = Pens.Black
+    Dim G1 As Color = Color.FromArgb(65, 65, 65) : Dim G2 As Color = Color.FromArgb(30, 30, 30)
+
+    Overrides Sub PaintHook()
+        If MouseState = State.MouseNone Then 'Draws a gradient depending on the mousestate
+            DrawGradient(G1, G2, 0, 0, Width, 20, 90S)
+        ElseIf MouseState = State.MouseOver Then
+            DrawGradient(G1, Color.Gray, 0, 0, Width, Height, 90S)
+        ElseIf MouseState = State.MouseDown Then
+            DrawGradient(G2, G1, 0, 0, Width, Height, 90S)
+        End If
+        G.DrawLine(Bl, 0, 0, Width, 0) 'Draw a black line accross the top, matches the theme's border
+        DrawText(HorizontalAlignment.Center, ForeColor, 0) 'Draws text..
+    End Sub
+End Class
+
+Class NewComboBox : Inherits ComboBox
+    Protected Overrides Sub OnPaintBackground(ByVal pevent As System.Windows.Forms.PaintEventArgs)
+    End Sub
+    Private _StartIndex As Integer = 0
+    Public Property StartIndex() As Integer
+        Get
+            Return _StartIndex
+        End Get
+        Set(ByVal value As Integer)
+            _StartIndex = value
+            Try
+                MyBase.SelectedIndex = value
+            Catch
+            End Try
+            Invalidate()
+        End Set
+    End Property
+    Sub ReplaceItem(ByVal sender As System.Object, ByVal e As System.Windows.Forms.DrawItemEventArgs) Handles Me.DrawItem
+        e.DrawBackground()
+        Try
+            If (e.State And DrawItemState.Selected) = DrawItemState.Selected Then
+                e.Graphics.FillRectangle(New SolidBrush(Color.FromArgb(37, 37, 37)), e.Bounds) '37 37 37
+            End If
+            Using b As New SolidBrush(Color.FromArgb(66, 130, 181))
+                e.Graphics.DrawString(MyBase.GetItemText(MyBase.Items(e.Index)), e.Font, b, e.Bounds)
+            End Using
+        Catch
+        End Try
+        e.DrawFocusRectangle()
+    End Sub
+    Protected Sub DrawTriangle(ByVal Clr As Color, ByVal FirstPoint As Point, ByVal SecondPoint As Point, ByVal ThirdPoint As Point, ByVal G As Graphics)
+        Dim points As New List(Of Point)()
+        points.Add(FirstPoint)
+        points.Add(SecondPoint)
+        points.Add(ThirdPoint)
+        G.FillPolygon(New SolidBrush(Clr), points.ToArray)
+    End Sub
+
+    Sub New()
+        MyBase.New()
+        SetStyle(ControlStyles.AllPaintingInWmPaint Or _
+        ControlStyles.ResizeRedraw Or _
+        ControlStyles.UserPaint Or _
+        ControlStyles.DoubleBuffer, True)
+        DrawMode = Windows.Forms.DrawMode.OwnerDrawFixed
+        BackColor = Color.FromArgb(45, 45, 45)
+        ForeColor = Color.FromArgb(66, 130, 181)
+        DropDownStyle = ComboBoxStyle.DropDownList
+        DoubleBuffered = True
+        Invalidate()
+    End Sub
+
+    Protected Overrides Sub OnPaint(ByVal e As PaintEventArgs)
+        MyBase.OnPaint(e)
+        Dim G As Graphics = e.Graphics
+        Dim T As LinearGradientBrush = New LinearGradientBrush(New Rectangle(0, 0, Width, 20), Color.FromArgb(50, 50, 50), Color.FromArgb(30, 42, 42, 42), 90S)
+        Dim T2 As LinearGradientBrush = New LinearGradientBrush(New Rectangle(0, 0, Width, 20), Color.FromArgb(50, 50, 50), Color.Gray, 90S)
+        Try
+            With G
+                .SmoothingMode = SmoothingMode.HighQuality
+                .Clear(Color.FromArgb(37, 37, 37))
+
+                .FillRectangle(T, New Rectangle(Width - 20, 0, Width, 20))
+                .DrawLine(Pens.Black, Width - 20, 0, Width - 20, Height)
+                Try
+                    '.DrawString(Items(SelectedIndex).ToString, Font, Brushes.White, New Rectangle(New Point(3, 3), New Size(Width - 18, Height)))
+                    .DrawString(Text, Font, New SolidBrush(Color.FromArgb(66, 130, 181)), New Rectangle(3, 0, Width - 20, Height), New StringFormat With {.LineAlignment = StringAlignment.Center, .Alignment = StringAlignment.Near})
+                Catch
+                End Try
+
+                .DrawLine(New Pen(New SolidBrush(Color.FromArgb(37, 37, 37))), 0, 0, 0, 0)
+                .DrawRectangle(New Pen(New SolidBrush(Color.FromArgb(0, 0, 0))), New Rectangle(1, 1, Width - 3, Height - 3))
+
+                .DrawLine(New Pen(New SolidBrush(Color.FromArgb(45, 45, 45))), 0, 0, Width, 0)
+                .DrawLine(New Pen(New SolidBrush(Color.FromArgb(45, 45, 45))), 0, 0, 0, Height)
+                .DrawLine(New Pen(New SolidBrush(Color.FromArgb(45, 45, 45))), Width - 1, 0, Width - 1, Height)
+                .DrawLine(New Pen(New SolidBrush(Color.FromArgb(70, 70, 70))), 0, Height - 1, Width, Height - 1)
+
+                DrawTriangle(Color.FromArgb(66, 130, 181), New Point(Width - 14, 8), New Point(Width - 7, 8), New Point(Width - 11, 11), G)
+            End With
+        Catch
+        End Try
+    End Sub
+End Class
+
+Public Class NewTopTabControl : Inherits TabControl
+
+    Private _TabBrColor As Color
+    Public Property TabBorderColor() As Color
+        Get
+            Return _TabBrColor
+        End Get
+        Set(ByVal v As Color)
+            _TabBrColor = v
+            Invalidate()
+        End Set
+    End Property
+    Private _ControlBColor As Color
+    Public Property TabTextColor() As Color
+        Get
+            Return _ControlBColor
+        End Get
+        Set(ByVal v As Color)
+            _ControlBColor = v
+            Invalidate()
+        End Set
+    End Property
+    Protected Overrides Sub OnPaintBackground(ByVal pevent As System.Windows.Forms.PaintEventArgs)
+    End Sub
+
+    Sub New()
+        MyBase.New()
+        SetStyle(ControlStyles.AllPaintingInWmPaint Or _
+        ControlStyles.ResizeRedraw Or _
+        ControlStyles.UserPaint Or _
+        ControlStyles.DoubleBuffer, True)
+
+        TabBorderColor = Color.White
+        TabTextColor = Color.FromArgb(60, 130, 181)
+
+    End Sub
+
+    Protected Overrides Sub OnPaint(ByVal e As PaintEventArgs)
+        Dim G As Graphics = e.Graphics
+        MyBase.OnPaint(e)
+
+        Dim r2 As New Rectangle(0, 0, Width - 1, 25)
+        Dim r3 As New Rectangle(0, 0, Width - 1, 25)
+        Dim r4 As New Rectangle(2, 0, Width - 1, 13)
+        Dim ItemBounds As Rectangle
+        Dim TextBrush As New SolidBrush(Color.Empty)
+        Dim TabBrush As New SolidBrush(Color.DimGray)
+
+        G.Clear(Color.FromArgb(32, 32, 32))
+        G.DrawRectangle(New Pen(New SolidBrush(Color.FromArgb(28, 28, 28))), New Rectangle(1, 1, Width - 3, Height - 3))
+
+        G.FillRectangle(New SolidBrush(Color.FromArgb(35, 35, 35)), r2)
+
+
+        For TabItemIndex As Integer = 0 To Me.TabCount - 1
+            ItemBounds = Me.GetTabRect(TabItemIndex)
+
+            If CBool(TabItemIndex And 1) Then
+                TabBrush.Color = Color.Transparent
+            Else
+                TabBrush.Color = Color.Transparent
+            End If
+            G.FillRectangle(TabBrush, ItemBounds)
+            Dim BorderPen As Pen
+            If TabItemIndex = SelectedIndex Then
+                BorderPen = New Pen(Color.Transparent, 1)
+                Dim dgb As New LinearGradientBrush(New Rectangle(ItemBounds.Location.X + 3, ItemBounds.Location.Y + 3, ItemBounds.Width - 8, ItemBounds.Height - 6), Color.FromArgb(50, 50, 50), Color.FromArgb(42, 42, 42), 90S)
+                Dim gloss As New LinearGradientBrush(New Rectangle(ItemBounds.Location.X + 3, ItemBounds.Location.Y + 3, ItemBounds.Width - 8, ItemBounds.Height / 2 - 5), Color.FromArgb(80, Color.White), Color.FromArgb(20, Color.White), 90S)
+                G.FillRectangle(dgb, New Rectangle(ItemBounds.Location.X + 3, ItemBounds.Location.Y + 3, ItemBounds.Width - 8, ItemBounds.Height - 6))
+                G.FillRectangle(gloss, New Rectangle(ItemBounds.Location.X + 3, ItemBounds.Location.Y + 3, ItemBounds.Width - 8, ItemBounds.Height / 2 - 4))
+                G.DrawRectangle(New Pen(New SolidBrush(Color.FromArgb(10, 10, 10))), New Rectangle(ItemBounds.Location.X + 3, ItemBounds.Location.Y + 3, ItemBounds.Width - 8, ItemBounds.Height - 6))
+                G.DrawRectangle(New Pen(New SolidBrush(Color.FromArgb(100, 50, 50, 50))), New Rectangle(ItemBounds.Location.X + 4, ItemBounds.Location.Y + 4, ItemBounds.Width - 10, ItemBounds.Height - 8))
+                Dim r1 As New Rectangle(1, 1, Width - 1, 3)
+            Else
+                BorderPen = New Pen(Color.Transparent, 1)
+            End If
+
+            G.DrawRectangle(BorderPen, New Rectangle(ItemBounds.Location.X + 3, ItemBounds.Location.Y + 1, ItemBounds.Width - 8, ItemBounds.Height - 4))
+
+            BorderPen.Dispose()
+
+            Dim sf As New StringFormat
+            sf.LineAlignment = StringAlignment.Center
+            sf.Alignment = StringAlignment.Center
+
+            If Me.SelectedIndex = TabItemIndex Then
+                TextBrush.Color = TabTextColor
+            Else
+                TextBrush.Color = Color.DimGray
+            End If
+            G.DrawString( _
+            Me.TabPages(TabItemIndex).Text, _
+            Me.Font, TextBrush, _
+            RectangleF.op_Implicit(Me.GetTabRect(TabItemIndex)), sf)
+            Try
+                Me.TabPages(TabItemIndex).BackColor = Color.FromArgb(40, 40, 40)
+            Catch
+            End Try
+        Next
+        Try
+            For Each tabpg As TabPage In Me.TabPages
+                tabpg.BorderStyle = BorderStyle.None
+            Next
+        Catch
+        End Try
+
+        G.DrawLine(New Pen(New SolidBrush(Color.FromArgb(10, 10, 10))), 2, 24, Width - 2, 24)
+        G.DrawRectangle((New Pen(New SolidBrush(Color.Black))), New Rectangle(1, 1, Width - 3, Height - 3))
+        G.DrawRectangle((New Pen(New SolidBrush(Color.FromArgb(70, 70, 70)))), New Rectangle(0, 0, Width - 1, Height - 1))
+        G.DrawLine(New Pen(New SolidBrush(Color.FromArgb(45, 45, 45))), 0, 0, Width, 0)
+        G.DrawLine(New Pen(New SolidBrush(Color.FromArgb(45, 45, 45))), 0, 0, 0, Height)
+        G.DrawLine(New Pen(New SolidBrush(Color.FromArgb(45, 45, 45))), Width - 1, 0, Width - 1, Height)
+        'G.DrawLine(New Pen(New SolidBrush(Color.FromArgb(31, 31, 31))), 2, 2, Width - 3, 2)
+    End Sub
+End Class
+Class NewCheck
+    Inherits ThemeControl
+    Private _CheckedState As Boolean
+    Public Property CheckedState() As Boolean
+        Get
+            Return _CheckedState
+        End Get
+        Set(ByVal v As Boolean)
+            _CheckedState = v
+            Invalidate()
+        End Set
+    End Property
+    Sub New()
+        Size = New Size(100, 15)
+        MinimumSize = New Size(16, 16)
+        MaximumSize = New Size(600, 16)
+        CheckedState = False
+        C1 = Color.FromArgb(132, 192, 240)
+        C2 = Color.FromArgb(65, 65, 65)
+        C3 = Color.FromArgb(132, 192, 240)
+        C4 = Color.FromArgb(65, 65, 65)
+        C5 = Color.FromArgb(35, 35, 35)
+        C6 = Color.FromArgb(40, 40, 40)
+        P1 = Color.FromArgb(25, 25, 25)
+        P2 = Color.FromArgb(59, 59, 59)
+        B1 = Color.FromArgb(66, 130, 181)
+    End Sub
+    Dim C1, C2, C3, C4, C5, C6, P1, P2, B1 As Color
+
+    Public Overrides Sub PaintHook()
+        G.Clear(C6)
+        Select Case CheckedState
+            Case True
+                DrawGradient(C1, C2, 3, 3, 10, 9, 90S)
+                DrawGradient(C3, C4, 4, 4, 10, 7, 90S)
+            Case False
+                DrawGradient(C5, C5, 0, 0, 15, 15, 90S)
+        End Select
+        G.DrawRectangle(New Pen(New SolidBrush(P1)), 0, 0, 14, 14)
+        G.DrawRectangle(New Pen(New SolidBrush(P2)), 1, 1, 12, 12)
+        DrawText(HorizontalAlignment.Left, (B1), 17, 0)
+        DrawCorners(C6, New Rectangle(0, 0, 13, 13))
+    End Sub
+    Sub changeCheck() Handles Me.Click
+        Select Case CheckedState
+            Case True
+                CheckedState = False
+            Case False
+                CheckedState = True
+        End Select
+    End Sub
+End Class
+
+Class NewRadio
+    Inherits ThemeControl
+    Dim OuterColor As Color = Color.FromArgb(25, 25, 25) : Dim InnerColor As Color = Color.FromArgb(59, 59, 59)
+    Dim TC As Color = Color.FromArgb(66, 130, 181) : Dim CheckColor As Color = Color.FromArgb(132, 192, 240)
+    Dim BC As Color = Color.FromArgb(40, 40, 40)
+    Event CheckChanged()
+    Private _index As Integer = 0
+    Public Property Index() As Integer
+        Get
+            Return _index
+        End Get
+        Set(ByVal value As Integer)
+            _index = value
+            Invalidate()
+        End Set
+    End Property
+    Public Overrides Sub PaintHook()
+        G.Clear(BC)
+        DrawText(HorizontalAlignment.Left, TC, 17)
+        Select Case _Checked
+            Case True
+                G.FillEllipse(New SolidBrush(CheckColor), 1, 1, 12, 12)
+            Case False
+                G.FillEllipse(New SolidBrush(BC), 1, 1, 12, 12)
+        End Select
+        G.DrawEllipse(New Pen(New SolidBrush(OuterColor)), 0, 0, 14, 14)
+        G.DrawEllipse(New Pen(New SolidBrush(InnerColor)), 1, 1, 12, 12)
+    End Sub
+
+    Sub New()
+        AllowTransparent()
+        ForeColor = Color.White
+        Dim S As New Size(22, 16) : Size = S
+        MinimumSize = New Size(16, 16)
+        MaximumSize = New Size(600, 16)
+        Font = New Font("Verdana", 8S) 'remove if using 1.51
+    End Sub
+
+    Sub tcc() Handles Me.TextChanged
+        Invalidate()
+    End Sub
+
+    Sub RemoveCheck()
+        For Each Ctrl As Control In Parent.Controls
+            If TypeOf Ctrl Is NewRadio Then
+                If Ctrl.Handle = Me.Handle Then Continue For
+                If Not (DirectCast(Ctrl, NewRadio).Index = Me.Index) Then Continue For
+                DirectCast(Ctrl, NewRadio).Checked = False
+            End If
+        Next
+    End Sub
+
+    Dim _Checked As Boolean = False
+    Property Checked() As Boolean
+        Get
+            Return _Checked
+        End Get
+        Set(ByVal value As Boolean)
+            If value = _Checked Then Exit Property
+            _Checked = value
+            Invalidate()
+            RaiseEvent CheckChanged()
+        End Set
+    End Property
+
+    Sub changeCheck() Handles Me.Click
+        _Checked = True
+        RemoveCheck()
+    End Sub
+End Class
+
+Class NewTextBox
+    Inherits ThemeControl
+
+    Dim WithEvents tb1 As TextBox
+    Public Sub New()
+        tb1 = New TextBox
+        AllowTransparent()
+        tb1.Parent = Me
+        tb1.Size = New Size(New Point(100, 20))
+        tb1.ForeColor = Color.FromArgb(66, 130, 181)
+        tb1.BackColor = Color.FromArgb(50, 50, 50)
+        tb1.BorderStyle = BorderStyle.FixedSingle
+        MinimumSize = New Size(0, 20) : Size = MinimumSize
+    End Sub
+
+    Public Overrides Sub PaintHook()
+        G.Clear(Parent.BackColor)
+    End Sub
+
+    Public Property Multiline() As Boolean
+        Get
+            Return tb1.Multiline
+        End Get
+        Set(ByVal value As Boolean)
+            tb1.Multiline = value
+            Invalidate()
+        End Set
+    End Property
+
+    Public Property UseSystemPasswordChar() As Boolean
+        Get
+            Return tb1.UseSystemPasswordChar
+        End Get
+        Set(ByVal value As Boolean)
+            tb1.UseSystemPasswordChar = value
+            Invalidate()
+        End Set
+    End Property
+
+    Sub s() Handles Me.Invalidated
+        If tb1.Multiline = False Then Height = tb1.Height
+    End Sub
+
+    Private Sub res() Handles Me.SizeChanged
+        tb1.Width = Width
+        tb1.Height = Height
+    End Sub
+
+    <Editor(MultilineEditor, UITypeEditor)> _
+    Public Overrides Property Text() As String
+        Get
+            Return tb1.Text
+        End Get
+        Set(ByVal value As String)
+            tb1.Text = value
+            Invalidate()
+        End Set
+    End Property
+End Class
+<Designer("System.Windows.Forms.Design.LabelDesigner, System.Design, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a")> _
+Class NewLabel
+    Inherits ThemeControl
+    Private _txt As String
+    Shadows ForeColor As Color = Color.FromArgb(66, 130, 181)
+    Public Overrides Sub PaintHook()
+        G.Clear(Parent.BackColor)
+        If _auto Then ADF()
+        G.FillRectangle(New SolidBrush(Parent.BackColor), 0, 0, Width, Height)
+        G.DrawString(_txt, Font, New SolidBrush(ForeColor), 0, 0)
+    End Sub
+
+    Sub New()
+        AllowTransparent()
+        Dim s As New Size(16, 20) : Size = s
+    End Sub
+
+    Sub ADF()
+        Dim hinst As Graphics = Me.CreateGraphics
+        Dim j As SizeF = hinst.MeasureString(Text, Font)
+        Size = New Size(j.Width, j.Height)
+    End Sub
+    <Editor(MultilineEditor, UITypeEditor)> _
+    Public Overrides Property Text() As String
+        Get
+            Return _txt
+        End Get
+        Set(ByVal value As String)
+            _txt = value
+            Invalidate()
+        End Set
+    End Property
+
+    Private _auto As Boolean = True
+    <ComVisible(True), Browsable(True)> _
+    Public Overrides Property AutoSize() As Boolean
+        Get
+            Return _auto
+        End Get
+        Set(ByVal value As Boolean)
+            _auto = value
+            Invalidate()
+        End Set
+    End Property
+
+    Sub ss() Handles Me.TextChanged
+        _txt = Me.Text
+        'If _auto = True Then
+        Invalidate()
+    End Sub
+End Class
+
+Public Class NewTabControl
+    Inherits TabControl
+
+    Private _HeaderWidth As Integer
+    Private _HeaderHeight As Integer
+
+    Private _HeaderAlignment As System.Drawing.ContentAlignment
+    Private _HeaderPadding As System.Windows.Forms.Padding
+    Private _HeaderFont As Font
+    Private _HeaderBackColor As Color
+    Private _HeaderBackBrush As SolidBrush
+    Private _HeaderBorderColor As Color
+    Private _HeaderBackPen As Pen
+    Private _HeaderForeColor As Color
+    Private _HeaderForeBrush As SolidBrush
+    Private _HeaderSelectedBackColor As Color
+    Private _HeaderSelectedBackBrush As SolidBrush
+    Private _HeaderSelectedForeColor As Color
+    Private _HeaderSelectedForeBrush As Brush
+
+    Private _BackColor As Color
+    Private _BackBrush As System.Drawing.SolidBrush
+
+#Region " Header Properties "
+    <System.ComponentModel.DefaultValue(100)> _
+    Public Property HeaderWidth() As Integer
+        Get
+            Return Me._HeaderWidth
+        End Get
+        Set(ByVal value As Integer)
+            Me._HeaderWidth = value
+            Me.ItemSize = New Size(Me.ItemSize.Width, value)
+        End Set
+    End Property
+
+    <System.ComponentModel.DefaultValue(32)> _
+    Public Property HeaderHeight() As Integer
+        Get
+            Return Me._HeaderHeight
+        End Get
+        Set(ByVal value As Integer)
+            Me._HeaderHeight = value
+            Me.ItemSize = New Size(value, Me.ItemSize.Height)
+        End Set
+    End Property
+
+    <System.ComponentModel.DefaultValue(GetType(System.Drawing.ContentAlignment), "ContentAlignment.MiddleLeft")> _
+    Public Property HeaderAlignment() As System.Drawing.ContentAlignment
+        Get
+            Return Me._HeaderAlignment
+        End Get
+        Set(ByVal value As System.Drawing.ContentAlignment)
+            Me._HeaderAlignment = value
+            Me.Invalidate()
+        End Set
+    End Property
+
+    <System.ComponentModel.DefaultValue(GetType(System.Windows.Forms.Padding), "3,3,3,3")> _
+    Public Property HeaderPadding() As System.Windows.Forms.Padding
+        Get
+            Return Me._HeaderPadding
+        End Get
+        Set(ByVal value As System.Windows.Forms.Padding)
+            Me._HeaderPadding = value
+            Me.Invalidate()
+        End Set
+    End Property
+
+    <System.ComponentModel.DefaultValue(GetType(Color), "White")> _
+    Public Property HeaderBorderColor() As Color
+        Get
+            Return Me._HeaderBorderColor
+        End Get
+        Set(ByVal value As Color)
+            If Not value = Me._HeaderBorderColor Then
+                Me._HeaderBorderColor = value
+                If Me._HeaderBackPen IsNot Nothing Then
+                    Me._HeaderBackPen.Dispose()
+                    Me._HeaderBackPen = Nothing
+                End If
+                Me.Invalidate()
+            End If
+        End Set
+    End Property
+
+    <System.ComponentModel.DefaultValue(GetType(Color), "LightGray")> _
+    Public Property HeaderBackColor() As Color
+        Get
+            Return Me._HeaderBackColor
+        End Get
+        Set(ByVal value As Color)
+            If Not value = Me._HeaderBackColor Then
+                Me._HeaderBackColor = value
+                If Me._HeaderBackBrush IsNot Nothing Then
+                    Me._HeaderBackBrush.Dispose()
+                    Me._HeaderBackBrush = Nothing
+                End If
+                Me.Invalidate()
+            End If
+        End Set
+    End Property
+
+    Private ReadOnly Property HeaderBackBrush() As SolidBrush
+        Get
+            If Me._HeaderBackBrush Is Nothing Then
+                Me._HeaderBackBrush = New SolidBrush(Me.HeaderBackColor)
+            End If
+            Return Me._HeaderBackBrush
+        End Get
+    End Property
+
+    Private ReadOnly Property HeaderPen() As Pen
+        Get
+            If Me._HeaderBackPen Is Nothing Then
+                Me._HeaderBackPen = New Pen(Me.HeaderBorderColor)
+            End If
+            Return Me._HeaderBackPen
+        End Get
+    End Property
+
+    <System.ComponentModel.DefaultValue(GetType(Color), "Black")> _
+    Public Property HeaderForeColor() As Color
+        Get
+            Return Me._HeaderForeColor
+        End Get
+        Set(ByVal value As Color)
+            If Not value = Me._HeaderForeColor Then
+                Me._HeaderForeColor = value
+                If Me._HeaderForeBrush IsNot Nothing Then
+                    Me._HeaderForeBrush.Dispose()
+                    Me._HeaderForeBrush = Nothing
+                End If
+                Me.Invalidate()
+            End If
+        End Set
+    End Property
+
+    Private ReadOnly Property HeaderForeBrush() As SolidBrush
+        Get
+            If Me._HeaderForeBrush Is Nothing Then
+                Me._HeaderForeBrush = New SolidBrush(Me.HeaderForeColor)
+            End If
+            Return Me._HeaderForeBrush
+        End Get
+    End Property
+
+    <System.ComponentModel.DefaultValue(GetType(Color), "DarkGray")> _
+    Public Property HeaderSelectedBackColor() As Color
+        Get
+            Return Me._HeaderSelectedBackColor
+        End Get
+        Set(ByVal value As Color)
+            If Not value = Me._HeaderSelectedBackColor Then
+                Me._HeaderSelectedBackColor = value
+                If Me._HeaderSelectedBackBrush IsNot Nothing Then
+                    Me._HeaderSelectedBackBrush.Dispose()
+                    Me._HeaderSelectedBackBrush = Nothing
+                End If
+                Me.Invalidate()
+            End If
+        End Set
+    End Property
+
+    Private ReadOnly Property HeaderSelectedBackBrush() As SolidBrush
+        Get
+            If Me._HeaderSelectedBackBrush Is Nothing Then
+                Me._HeaderSelectedBackBrush = New SolidBrush(Me.HeaderSelectedBackColor)
+            End If
+            Return Me._HeaderSelectedBackBrush
+        End Get
+    End Property
+
+    <System.ComponentModel.DefaultValue(GetType(Color), "Black")> _
+    Public Property HeaderSelectedForeColor() As Color
+        Get
+            Return Me._HeaderSelectedForeColor
+        End Get
+        Set(ByVal value As Color)
+            If Not value = Me._HeaderSelectedForeColor Then
+                Me._HeaderSelectedForeColor = value
+                Me._HeaderSelectedForeBrush.Dispose()
+                Me._HeaderSelectedForeBrush = Nothing
+                Me.Invalidate()
+            End If
+        End Set
+    End Property
+
+    Private ReadOnly Property HeaderSelectedForeBrush() As SolidBrush
+        Get
+            If Me._HeaderSelectedForeBrush Is Nothing Then
+                Me._HeaderSelectedForeBrush = New SolidBrush(Me.HeaderSelectedForeColor)
+            End If
+            Return Me._HeaderSelectedForeBrush
+        End Get
+    End Property
+
+    Public Property HeaderFont() As Font
+        Get
+            Return Me._HeaderFont
+        End Get
+        Set(ByVal value As Font)
+            Me._HeaderFont = value
+            Me.Invalidate()
+        End Set
+    End Property
+#End Region
+
+    <System.ComponentModel.DefaultValue(GetType(Color), "White")> _
+    <System.ComponentModel.Browsable(True)> _
+    Public Overrides Property BackColor() As Color
+        Get
+            Return Me._BackColor
+        End Get
+        Set(ByVal value As Color)
+            If Not Me._BackColor = value Then
+                Me._BackColor = value
+                If Me._BackBrush IsNot Nothing Then
+                    Me._BackBrush.Dispose()
+                    Me._BackBrush = Nothing
+                End If
+                Me.Invalidate()
+            End If
+        End Set
+    End Property
+
+    Private ReadOnly Property BackBrush() As SolidBrush
+        Get
+            If Me._BackBrush Is Nothing Then
+                Me._BackBrush = New SolidBrush(Me.BackColor)
+            End If
+            Return Me._BackBrush
+        End Get
+    End Property
+
+    Public Sub New()
+        Me._HeaderWidth = 100
+        Me._HeaderHeight = 32
+        Me._HeaderAlignment = ContentAlignment.MiddleLeft
+        Me._HeaderPadding = New Padding(3)
+        Me._BackColor = Color.FromArgb(40, 40, 40)
+        Me._HeaderBorderColor = Color.FromArgb(40, 40, 40)
+        Me._HeaderFont = Me.Font
+        Me._HeaderForeColor = Color.FromArgb(66, 130, 181)
+        Me._HeaderBackColor = Color.FromArgb(50, 50, 50)
+        Me._HeaderSelectedBackColor = Color.FromArgb(65, 65, 65)
+        Me._HeaderSelectedForeColor = Color.FromArgb(66, 130, 181)
+
+        Me.DrawMode = TabDrawMode.OwnerDrawFixed
+        Me.SizeMode = TabSizeMode.Fixed
+        Me.Alignment = TabAlignment.Left
+
+        Me.ItemSize = New Size(Me.HeaderHeight, Me.HeaderWidth)
+
+        Me.SetStyle(ControlStyles.AllPaintingInWmPaint, True)
+        Me.SetStyle(ControlStyles.UserPaint, True)
+        Me.SetStyle(ControlStyles.SupportsTransparentBackColor, True)
+        For Each tp As TabPage In Me.TabPages
+            tp.BackColor = Color.Transparent
+            tp.CreateGraphics.DrawRectangle(New Pen(Color.FromArgb(65, 65, 65)), New Rectangle(0, 0, tp.Width - 1, tp.Height - 1))
+        Next
+    End Sub
+
+    Private Sub TabP() Handles Me.SelectedIndexChanged
+        If TabPages.Count < 1 Then Exit Sub
+        For Each tp As TabPage In Me.TabPages
+            tp.BackColor = Color.Transparent
+            tp.CreateGraphics.Clear(Me.BackColor)
+            tp.CreateGraphics.DrawRectangle(New Pen(Color.Black), New Rectangle(0, 0, tp.Width - 1, tp.Height - 1))
+        Next
+    End Sub
+
+    Protected Overrides Sub OnPaint(ByVal e As System.Windows.Forms.PaintEventArgs)
+        Dim g As Graphics
+
+        g = e.Graphics
+
+        g.FillRectangle(Me.BackBrush, e.ClipRectangle)      ' background
+
+        For i As Integer = 0 To Me.TabPages.Count - 1
+            Call Me.DrawTabButton(g, i)
+            Call Me.DrawTabText(g, i)
+        Next
+    End Sub
+
+    Private Sub DrawTabButton(ByVal g As Graphics, ByVal TabPageIndex As Integer)
+        Dim r As Rectangle
+        ' get the tab rectangle
+        r = Me.GetTabRect(TabPageIndex)
+        ' increase its width we dont want the background in between
+        r.Width = r.Width + 2
+        ' if first tab page
+        If TabPageIndex = 0 Then
+            ' reduce its height and move it a little bit lower
+            ' since in tab control first tab button is displayed a little
+            ' bit heigher
+            r.Height = r.Height - 2
+            r.Y = r.Y + 2
+        End If
+        ' if given tab button is selected
+        If Me.SelectedIndex = TabPageIndex Then
+            ' use selected properties
+            g.FillRectangle(Me.HeaderSelectedBackBrush, r)
+            ' if currently focused then draw focus rectangle
+            If Me.Focused Then
+                System.Windows.Forms.ControlPaint.DrawFocusRectangle(g, New Rectangle(r.Left + 2, r.Top + 2, r.Width - 4, r.Height - 5))
+            End If
+        Else ' else (not the selected tab page)
+            g.FillRectangle(Me.HeaderBackBrush, r)
+        End If
+
+        ' if first tab button
+        If TabPageIndex = 0 Then
+            ' draw a line on top
+            g.DrawLine(Me.HeaderPen, r.Left, r.Top, r.Right, r.Top)
+        End If
+        ' line at left
+        g.DrawLine(Me.HeaderPen, r.Left, r.Top, r.Left, r.Bottom - 1)
+        ' line at bottom
+        g.DrawLine(Me.HeaderPen, r.Left, r.Bottom - 1, r.Right, r.Bottom - 1)
+        ' no line at right since we want to give an effect of
+        ' pages
+    End Sub
+
+    Private Sub DrawTabText(ByVal g As Graphics, ByVal TabPageIndex As Integer)
+        Dim iX As Integer
+        Dim iY As Integer
+        Dim sText As String
+        Dim sizeText As SizeF
+        Dim rectTab As Rectangle
+
+        ' get tab button rectangle
+        rectTab = Me.GetTabRect(TabPageIndex)
+        ' get text
+        sText = Me.TabPages(TabPageIndex).Text
+        ' measure the size of text
+        sizeText = g.MeasureString(sText, Me.HeaderFont)
+
+        ' check text alignment
+        Select Case Me.HeaderAlignment
+            Case ContentAlignment.MiddleLeft, ContentAlignment.BottomLeft, ContentAlignment.TopLeft
+                iX = rectTab.Left + Me.HeaderPadding.Left
+            Case ContentAlignment.MiddleRight, ContentAlignment.BottomRight, ContentAlignment.TopRight
+                iX = rectTab.Right - sizeText.Width - Me.HeaderPadding.Right
+            Case ContentAlignment.MiddleCenter, ContentAlignment.BottomCenter, ContentAlignment.TopCenter
+                iX = rectTab.Left + (rectTab.Width - Me.HeaderPadding.Left - Me.HeaderPadding.Right - sizeText.Width) / 2
+        End Select
+
+        Select Case Me.HeaderAlignment
+            Case ContentAlignment.TopLeft, ContentAlignment.TopCenter, ContentAlignment.TopRight
+                iY = rectTab.Top + Me.HeaderPadding.Top
+            Case ContentAlignment.BottomLeft, ContentAlignment.BottomCenter, ContentAlignment.BottomRight
+                iY = rectTab.Bottom - sizeText.Height - Me.HeaderPadding.Bottom
+            Case ContentAlignment.MiddleCenter, ContentAlignment.MiddleLeft, ContentAlignment.MiddleRight
+                iY = rectTab.Top + (rectTab.Height - Me.HeaderPadding.Top - sizeText.Height) / 2
+        End Select
+
+        ' if selected tab button
+        If Me.SelectedIndex = TabPageIndex Then
+            g.DrawString(sText, Me.HeaderFont, Me.HeaderSelectedForeBrush, iX, iY)
+        Else
+            g.DrawString(sText, Me.HeaderFont, Me.HeaderForeBrush, iX, iY)
+        End If
+    End Sub
+End Class
+
+Partial Public Class NewDigitalDisplay
+    Inherits Control
+    Private _digitColor As Color = Color.FromArgb(66, 130, 181)
+    Public Property DigitColor() As Color
+        Get
+            Return _digitColor
+        End Get
+        Set(ByVal value As Color)
+            _digitColor = value
+            Invalidate()
+        End Set
+    End Property
+
+    Private _digitText As String = "88.88"
+    Public Property DigitText() As String
+        Get
+            Return _digitText
+        End Get
+        Set(ByVal value As String)
+            _digitText = value
+            Invalidate()
+        End Set
+    End Property
+
+    Public Sub New()
+        Me.SetStyle(ControlStyles.DoubleBuffer, True)
+        Me.SetStyle(ControlStyles.AllPaintingInWmPaint, True)
+        Me.SetStyle(ControlStyles.ResizeRedraw, True)
+        Me.SetStyle(ControlStyles.UserPaint, True)
+        Me.SetStyle(ControlStyles.SupportsTransparentBackColor, True)
+        Me.BackColor = Color.Transparent
+    End Sub
+
+    Private Sub DigitalGauge_Paint(ByVal sender As Object, ByVal e As PaintEventArgs) Handles MyBase.Paint
+        e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias
+
+        Dim sevenSegmentHelper As New SevenSegmentHelper(e.Graphics)
+
+        Dim digitSizeF As SizeF = sevenSegmentHelper.GetStringSize(_digitText, Me.Font)
+        Dim scaleFactor As Single = Math.Min(ClientSize.Width \ digitSizeF.Width, ClientSize.Height \ digitSizeF.Height)
+        Dim font As New Font(Me.Font.FontFamily, scaleFactor * Me.Font.SizeInPoints)
+        digitSizeF = sevenSegmentHelper.GetStringSize(_digitText, font)
+
+        Using brush As New SolidBrush(_digitColor)
+            Using lightBrush As New SolidBrush(Color.FromArgb(20, _digitColor))
+                sevenSegmentHelper.DrawDigits(_digitText, font, brush, lightBrush, (ClientSize.Width - digitSizeF.Width) / 2, (ClientSize.Height - digitSizeF.Height) / 2)
+            End Using
+        End Using
+    End Sub
+End Class
+
+Public Class SevenSegmentHelper
+    Private _graphics As Graphics
+
+    ' Indicates what segments are illuminated for all 10 digits
+    Private Shared _segmentData(,) As Byte = {{1, 1, 1, 0, 1, 1, 1}, {0, 0, 1, 0, 0, 1, 0}, {1, 0, 1, 1, 1, 0, 1}, {1, 0, 1, 1, 0, 1, 1}, {0, 1, 1, 1, 0, 1, 0}, {1, 1, 0, 1, 0, 1, 1}, {1, 1, 0, 1, 1, 1, 1}, {1, 0, 1, 0, 0, 1, 0}, {1, 1, 1, 1, 1, 1, 1}, {1, 1, 1, 1, 0, 1, 1}, {0, 0, 0, 1, 0, 0, 0}, {1, 1, 1, 1, 1, 0, 0}, {1, 1, 1, 1, 1, 1, 0}}
+
+    ' Points that define each of the seven segments
+    Private ReadOnly _segmentPoints(6)() As Point
+
+    Public Sub New(ByVal graphics As Graphics)
+        Me._graphics = graphics
+        _segmentPoints(0) = New Point() {New Point(3, 2), New Point(39, 2), New Point(31, 10), New Point(11, 10)}
+        _segmentPoints(1) = New Point() {New Point(2, 3), New Point(10, 11), New Point(10, 31), New Point(2, 35)}
+        _segmentPoints(2) = New Point() {New Point(40, 3), New Point(40, 35), New Point(32, 31), New Point(32, 11)}
+        _segmentPoints(3) = New Point() {New Point(3, 36), New Point(11, 32), New Point(31, 32), New Point(39, 36), New Point(31, 40), New Point(11, 40)}
+        _segmentPoints(4) = New Point() {New Point(2, 37), New Point(10, 41), New Point(10, 61), New Point(2, 69)}
+        _segmentPoints(5) = New Point() {New Point(40, 37), New Point(40, 69), New Point(32, 61), New Point(32, 41)}
+        _segmentPoints(6) = New Point() {New Point(11, 62), New Point(31, 62), New Point(39, 70), New Point(3, 70)}
+    End Sub
+
+    Public Function GetStringSize(ByVal text As String, ByVal font As Font) As SizeF
+        Dim sizef As New SizeF(0, _graphics.DpiX * font.SizeInPoints / 72)
+
+        For i As Integer = 0 To text.Length - 1
+            If Char.IsDigit(text.Chars(i)) OrElse text.Chars(i) = "-"c Then
+                sizef.Width += 42 * _graphics.DpiX * font.SizeInPoints / 72 \ 72
+            ElseIf text.Chars(i) = ":"c OrElse text.Chars(i) = "."c Then
+                sizef.Width += 12 * _graphics.DpiX * font.SizeInPoints / 72 \ 72
+            End If
+        Next i
+        Return sizef
+    End Function
+
+    Public Sub DrawDigits(ByVal text As String, ByVal font As Font, ByVal brush As Brush, ByVal brushLight As Brush, ByVal x As Single, ByVal y As Single)
+        For cnt As Integer = 0 To text.Length - 1
+            ' For digits 0-9
+            If Char.IsDigit(text.Chars(cnt)) Then
+                x = DrawDigit(AscW(text.Chars(cnt)) - AscW("0"c), font, brush, brushLight, x, y)
+                ' For colon :
+            ElseIf text.Chars(cnt) = ":"c Then
+                x = DrawColon(font, brush, x, y)
+                ' For dot .
+            ElseIf text.Chars(cnt) = "."c Then
+                x = DrawDot(font, brush, x, y)
+            ElseIf text.Chars(cnt) = "-"c Then
+                x = DrawMinus(font, brush, brushLight, x, y)
+            ElseIf text.Chars(cnt) = "P"c Then
+                x = DrawP(font, brush, brushLight, x, y)
+            ElseIf text.Chars(cnt) = "A"c Then
+                x = DrawP(font, brush, brushLight, x, y)
+            End If
+        Next cnt
+    End Sub
+
+    Private Function DrawDigit(ByVal num As Integer, ByVal font As Font, ByVal brush As Brush, ByVal brushLight As Brush, ByVal x As Single, ByVal y As Single) As Single
+        For cnt As Integer = 0 To _segmentPoints.Length - 1
+            If _segmentData(num, cnt) = 1 Then
+                FillPolygon(_segmentPoints(cnt), font, brush, x, y)
+            Else
+                FillPolygon(_segmentPoints(cnt), font, brushLight, x, y)
+            End If
+        Next cnt
+        Return x + 42 * _graphics.DpiX * font.SizeInPoints / 72 \ 72
+    End Function
+
+    Private Function DrawDot(ByVal font As Font, ByVal brush As Brush, ByVal x As Single, ByVal y As Single) As Single
+        Dim dotPoints(0)() As Point
+
+        dotPoints(0) = New Point() {New Point(2, 64), New Point(6, 61), New Point(10, 64), New Point(6, 69)}
+
+        For cnt As Integer = 0 To dotPoints.Length - 1
+            FillPolygon(dotPoints(cnt), font, brush, x, y)
+        Next cnt
+        Return x + 12 * _graphics.DpiX * font.SizeInPoints / 72 \ 72
+    End Function
+
+    Private Function DrawMinus(ByVal font As Font, ByVal brush As Brush, ByVal brushLight As Brush, ByVal x As Single, ByVal y As Single) As Single
+        DrawDigit(10, font, brush, brushLight, x, y)
+        Return x + 42 * _graphics.DpiX * font.SizeInPoints / 72 \ 72
+    End Function
+
+    Private Function DrawP(ByVal font As Font, ByVal brush As Brush, ByVal brushLight As Brush, ByVal x As Single, ByVal y As Single) As Single
+        DrawDigit(11, font, brush, brushLight, x, y)
+        Return x + 42 * _graphics.DpiX * font.SizeInPoints / 72 \ 72
+    End Function
+
+    Private Function DrawA(ByVal font As Font, ByVal brush As Brush, ByVal brushLight As Brush, ByVal x As Single, ByVal y As Single) As Single
+        DrawDigit(12, font, brush, brushLight, x, y)
+        Return x + 42 * _graphics.DpiX * font.SizeInPoints / 72 \ 72
+    End Function
+
+    Private Function DrawColon(ByVal font As Font, ByVal brush As Brush, ByVal x As Single, ByVal y As Single) As Single
+        Dim colonPoints(1)() As Point
+
+        colonPoints(0) = New Point() {New Point(2, 21), New Point(6, 17), New Point(10, 21), New Point(6, 25)}
+        colonPoints(1) = New Point() {New Point(2, 51), New Point(6, 47), New Point(10, 51), New Point(6, 55)}
+
+        For cnt As Integer = 0 To colonPoints.Length - 1
+            FillPolygon(colonPoints(cnt), font, brush, x, y)
+        Next cnt
+        Return x + 12 * _graphics.DpiX * font.SizeInPoints / 72 \ 72
+    End Function
+
+    Private Sub FillPolygon(ByVal polygonPoints() As Point, ByVal font As Font, ByVal brush As Brush, ByVal x As Single, ByVal y As Single)
+        Dim polygonPointsF(polygonPoints.Length - 1) As PointF
+
+        For cnt As Integer = 0 To polygonPoints.Length - 1
+            polygonPointsF(cnt).X = x + polygonPoints(cnt).X * _graphics.DpiX * font.SizeInPoints / 72 \ 72
+            polygonPointsF(cnt).Y = y + polygonPoints(cnt).Y * _graphics.DpiY * font.SizeInPoints / 72 \ 72
+        Next cnt
+        _graphics.FillPolygon(brush, polygonPointsF)
+    End Sub
+End Class
+
+<DefaultEvent("Scroll"), _
+DefaultProperty("Value")> _
+Public Class NewTrackBar
+    Inherits Control
+    Public Sub New()
+        MyBase.New()
+        Me.Size = New Size(145, 11)
+        Me.SetStyle(ControlStyles.SupportsTransparentBackColor Or ControlStyles.OptimizedDoubleBuffer Or _
+             ControlStyles.AllPaintingInWmPaint Or ControlStyles.Selectable Or ControlStyles.UserMouse, True)
+        Me.Thumb = New Rectangle()
+        Me.LayoutTrackBarParts()
+    End Sub
+    Public Event Scroll As EventHandler
+    Public Event ValueChanged As EventHandler
+    Private _orientation As Orientation = Orientation.Horizontal
+    Private _minimum As Int32
+    Private _maximum As Int32 = 100
+    'Private _smallChange As Int32 = 1
+    Private _largeChange As Int32 = 5
+    Private _value As Int32
+    Private _tickFrequency As Int32 = 1
+    Private _thumbDragging As Boolean
+    Private _scrollUp As Boolean
+    Private Thumb As Rectangle
+    Private _thumbFocused As Boolean
+    Private scrollTimer As Timer
+    <DefaultValue(GetType(Orientation), "Horizontal")> _
+    Public Property Orientation() As Orientation
+        Get
+            Return _orientation
+        End Get
+        Set(ByVal value As Orientation)
+            If (_orientation <> value) Then
+                _orientation = value
+                Dim w, h As Int32
+                w = Me.Height
+                h = Me.Width
+                Me.Size = New Size(w, h)
+                Me.LayoutTrackBarParts()
+                Me.Invalidate()
+            End If
+        End Set
+    End Property
+    <DefaultValue(0), _
+    RefreshProperties(RefreshProperties.All)> _
+    Public Property Minimum() As Int32
+        Get
+            Return _minimum
+        End Get
+        Set(ByVal value As Int32)
+            If (_minimum <> value) Then
+                _minimum = value
+                If (_maximum <= value) Then
+                    _maximum = value
+                End If
+                Me.LayoutTrackBarParts()
+                Me.Invalidate()
+            End If
+        End Set
+    End Property
+    <DefaultValue(100)> _
+    Public Property Maximum() As Int32
+        Get
+            Return _maximum
+        End Get
+        Set(ByVal value As Int32)
+            If (_maximum <> value) Then
+                _maximum = value
+                If (Minimum >= value) Then
+                    Minimum = value
+                End If
+                Me.LayoutTrackBarParts()
+                Me.Invalidate()
+            End If
+        End Set
+    End Property
+    Public Property Value() As Int32
+        Get
+            If (_value < Me.Minimum) Then
+                Return Me.Minimum
+            End If
+            Return _value
+        End Get
+        Set(ByVal value As Int32)
+            If (value < Me.Minimum) Then
+                value = _minimum
+            End If
+            If (value > _maximum) Then
+                value = _maximum
+            End If
+            If (value <> _value) Then
+                _value = value
+                Me.LayoutTrackBarParts()
+                Me.OnValueChanged(EventArgs.Empty)
+            End If
+        End Set
+    End Property
+    Private ReadOnly Property Horizontal() As Boolean
+        Get
+            Return _orientation = Orientation.Horizontal
+        End Get
+    End Property
+    Private Property ThumbDragging() As Boolean
+        Get
+            Return _thumbDragging
+        End Get
+        Set(ByVal value As Boolean)
+            If (_thumbDragging <> value) Then
+                _thumbDragging = value
+                Me.Invalidate()
+            End If
+        End Set
+    End Property
+    Protected Overrides Sub OnPaint(ByVal e As PaintEventArgs)
+        MyBase.OnPaint(e)
+        Dim channelBounds As Rectangle
+        If Me.Horizontal Then
+            channelBounds = New Rectangle(6, Me.Height / 2 - 2, Me.Width - 16, 4)
+        Else
+            channelBounds = New Rectangle(Me.Width / 2 - 2, 6, 4, Me.Height - 16)
+        End If
+        ControlPaint.DrawBorder3D(e.Graphics, channelBounds, Border3DStyle.Sunken)
+        Using brush As SolidBrush = New SolidBrush(Color.FromArgb(60, 60, 60))
+            If (ThumbDragging) Then
+                brush.Color = Color.FromArgb(75, 75, 75)
+            End If
+            e.Graphics.FillRectangle(brush, Me.Thumb)
+            e.Graphics.DrawRectangle(Pens.Black, Me.Thumb)
+        End Using
+        If (Me.Focused AndAlso Me.ShowFocusCues) Then
+            ControlPaint.DrawFocusRectangle(e.Graphics, Me.ClientRectangle)
+        End If
+    End Sub
+    Protected Overrides Sub OnGotFocus(ByVal e As EventArgs)
+        MyBase.OnGotFocus(e)
+        _thumbFocused = (Me.Focused AndAlso Me.ShowFocusCues)
+        Me.Invalidate()
+    End Sub
+    Protected Overrides Sub OnLostFocus(ByVal e As EventArgs)
+        MyBase.OnLostFocus(e)
+        _thumbFocused = (Me.Focused AndAlso Me.ShowFocusCues)
+        Me.Invalidate()
+    End Sub
+    Protected Overrides Function IsInputKey(ByVal keyData As Keys) As Boolean
+        Select Case (keyData)
+            Case Keys.Up, Keys.Down, Keys.Left, Keys.Right
+                Return True
+            Case Else
+                Return MyBase.IsInputKey(keyData)
+        End Select
+    End Function
+    Protected Overrides Sub OnMouseDown(ByVal e As MouseEventArgs)
+        MyBase.OnMouseDown(e)
+        If (e.Button = MouseButtons.Left) Then
+            ThumbDragging = Thumb.Contains(e.Location)
+        End If
+    End Sub
+    Protected Overrides Sub OnMouseUp(ByVal e As MouseEventArgs)
+        MyBase.OnMouseUp(e)
+        ThumbDragging = False
+    End Sub
+    Protected Overrides Sub OnMouseMove(ByVal e As MouseEventArgs)
+        MyBase.OnMouseMove(e)
+        If (ThumbDragging) Then
+            Me.Value = ValueFromPoint(e.Location)
+        End If
+    End Sub
+    Protected Overrides Sub OnVisibleChanged(ByVal e As EventArgs)
+        MyBase.OnVisibleChanged(e)
+        If (Me.Visible) Then
+            Me.LayoutTrackBarParts()
+        End If
+    End Sub
+    Protected Overrides Sub OnSizeChanged(ByVal e As EventArgs)
+        MyBase.OnSizeChanged(e)
+        Me.LayoutTrackBarParts()
+    End Sub
+    Protected Overridable Sub OnScroll(ByVal e As EventArgs)
+        RaiseEvent Scroll(Me, e)
+    End Sub
+    Protected Overridable Sub OnValueChanged(ByVal eventArgs As EventArgs)
+        RaiseEvent ValueChanged(Me, eventArgs)
+        Me.LayoutTrackBarParts()
+        Me.OnScroll(eventArgs)
+        Me.Invalidate()
+    End Sub
+    Private Sub LayoutTrackBarParts()
+        If Me.Horizontal Then
+            Thumb.Size = New Size(14, 28)
+        Else
+            Thumb.Size = New Size(28, 14)
+        End If
+        Dim channelLength As Single
+        If Me.Horizontal Then
+            channelLength = Me.Width - 26
+        Else
+            channelLength = Me.Height - 26
+        End If
+        Dim stepCount As Single = (Me.Maximum - Me.Minimum)
+        Dim stepSize As Single
+        If stepCount > 0 Then
+            stepSize = channelLength / stepCount
+        Else
+            stepSize = 0
+        End If
+        Dim thumbOffset As Single = (stepSize) * (Me.Value - Me.Minimum)
+        If Me.Horizontal Then
+            Thumb.Location = Point.Round(New PointF(6 + thumbOffset, Me.Height / 2 - 14))
+        Else
+            Thumb.Location = Point.Round(New PointF(Me.Width / 2 - 14, channelLength - thumbOffset + 6))
+        End If
+    End Sub
+    Private Function ValueFromPoint(ByVal point As Point) As Int32
+        Dim channelLength As Single
+        If (Me.Horizontal) Then
+            channelLength = Me.Width - 26 ' Channel Left margin + Channel Right margin + Thumb.Width
+        Else
+            channelLength = Me.Height - 26 ' Channel Top margin + Channel Bottom margin + Thumb.Height
+        End If
+        Dim stepCount As Single = (Me.Maximum - Me.Minimum)
+        Dim stepSize As Single = 0
+        If (stepCount > 0) Then
+            stepSize = channelLength / stepCount
+        End If
+        If (Me.Horizontal) Then
+            point.Offset(-7, 0)
+            Return (point.X / stepSize) + Me.Minimum
+        End If
+        point.Offset(0, -7)
+        Return Me.Maximum - (point.Y / stepSize) + Me.Minimum
+    End Function
+End Class

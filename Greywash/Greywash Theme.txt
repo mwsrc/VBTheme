@@ -1,0 +1,1257 @@
+Imports System.Drawing
+Imports System.Drawing.Drawing2D
+Imports System.ComponentModel
+Imports System.Drawing.Text
+ 
+#Region "Properties"
+ 
+#Region " Mouse States"
+ 
+Enum MouseState As Byte
+    None = 0
+    Over = 1
+    Down = 2
+    Block = 3
+End Enum
+ 
+#End Region
+ 
+#End Region
+ 
+Module DrawHelpers
+ 
+#Region "Functions"
+ 
+    Dim Height As Integer
+    Dim Width As Integer
+ 
+    Public Function RoundRec(ByVal Rectangle As Rectangle, ByVal Curve As Integer) As GraphicsPath
+        Dim P As GraphicsPath = New GraphicsPath()
+        Dim ArcRectangleWidth As Integer = Curve * 2
+        P.AddArc(New Rectangle(Rectangle.X, Rectangle.Y, ArcRectangleWidth, ArcRectangleWidth), -180, 90)
+        P.AddArc(New Rectangle(Rectangle.Width - ArcRectangleWidth + Rectangle.X, Rectangle.Y, ArcRectangleWidth, ArcRectangleWidth), -90, 90)
+        P.AddArc(New Rectangle(Rectangle.Width - ArcRectangleWidth + Rectangle.X, Rectangle.Height - ArcRectangleWidth + Rectangle.Y, ArcRectangleWidth, ArcRectangleWidth), 0, 90)
+        P.AddArc(New Rectangle(Rectangle.X, Rectangle.Height - ArcRectangleWidth + Rectangle.Y, ArcRectangleWidth, ArcRectangleWidth), 90, 90)
+        P.AddLine(New Point(Rectangle.X, Rectangle.Height - ArcRectangleWidth + Rectangle.Y), New Point(Rectangle.X, Curve + Rectangle.Y))
+        Return P
+    End Function
+ 
+    Public Function RoundRect(ByVal x!, ByVal y!, ByVal w!, ByVal h!, Optional ByVal r! = 0.3, Optional ByVal TL As Boolean = True, Optional ByVal TR As Boolean = True, Optional ByVal BR As Boolean = True, Optional ByVal BL As Boolean = True) As GraphicsPath
+        Dim d! = Math.Min(w, h) * r, xw = x + w, yh = y + h
+        RoundRect = New GraphicsPath
+ 
+        With RoundRect
+            If TL Then .AddArc(x, y, d, d, 180, 90) Else .AddLine(x, y, x, y)
+            If TR Then .AddArc(xw - d, y, d, d, 270, 90) Else .AddLine(xw, y, xw, y)
+            If BR Then .AddArc(xw - d, yh - d, d, d, 0, 90) Else .AddLine(xw, yh, xw, yh)
+            If BL Then .AddArc(x, yh - d, d, d, 90, 90) Else .AddLine(x, yh, x, yh)
+ 
+            .CloseFigure()
+        End With
+    End Function
+ 
+#End Region
+ 
+End Module
+ 
+'Controls
+ 
+Class GreywashClose
+    Inherits Control
+ 
+#Region " Declarations "
+    Private State As MouseState = MouseState.None
+#End Region
+ 
+#Region " MouseStates "
+ 
+    Protected Overrides Sub OnMouseEnter(ByVal e As EventArgs)
+        MyBase.OnMouseEnter(e)
+        State = MouseState.Over : Invalidate()
+    End Sub
+ 
+    Protected Overrides Sub OnMouseDown(ByVal e As MouseEventArgs)
+        MyBase.OnMouseDown(e)
+        State = MouseState.Down : Invalidate()
+    End Sub
+ 
+    Protected Overrides Sub OnMouseLeave(ByVal e As EventArgs)
+        MyBase.OnMouseLeave(e)
+        State = MouseState.None : Invalidate()
+    End Sub
+ 
+    Protected Overrides Sub OnMouseUp(ByVal e As MouseEventArgs)
+        MyBase.OnMouseUp(e)
+        State = MouseState.Over : Invalidate()
+    End Sub
+ 
+    Protected Overrides Sub OnMouseMove(ByVal e As MouseEventArgs)
+        MyBase.OnMouseMove(e)
+    End Sub
+ 
+    Protected Overrides Sub OnClick(ByVal e As EventArgs)
+        MyBase.OnClick(e)
+        Environment.Exit(0)
+    End Sub
+ 
+#End Region
+ 
+#Region " Properties "
+ 
+    Protected Overrides Sub OnResize(ByVal e As EventArgs)
+        MyBase.OnResize(e)
+        Size = New Size(16, 16)
+    End Sub
+ 
+#End Region
+ 
+    Sub New()
+        SetStyle(ControlStyles.SupportsTransparentBackColor, True)
+        SetStyle(ControlStyles.Opaque, True)
+        Anchor = AnchorStyles.Top Or AnchorStyles.Right
+    End Sub
+ 
+    Protected Overrides Sub OnPaint(ByVal e As PaintEventArgs)
+        Dim G = e.Graphics
+        G.Clear(Color.LightGray)
+        G.SmoothingMode = SmoothingMode.HighQuality
+        G.FillEllipse(New SolidBrush(Color.FromArgb(100, Color.Red)), New Rectangle(2, 2, 11, 11))
+ 
+        Select Case State
+            Case MouseState.Over
+                G.FillEllipse(New SolidBrush(Color.FromArgb(80, Color.White)), New Rectangle(2, 2, 11, 11))
+            Case MouseState.Down
+                G.FillEllipse(New SolidBrush(Color.FromArgb(80, Color.Black)), New Rectangle(2, 2, 11, 11))
+        End Select
+ 
+        MyBase.OnPaint(e)
+        G.Dispose()
+    End Sub
+ 
+End Class
+ 
+Class GreywashMax
+    Inherits Control
+ 
+#Region " Declarations "
+    Private State As MouseState = MouseState.None
+#End Region
+ 
+#Region " MouseStates"
+ 
+    Protected Overrides Sub OnMouseEnter(ByVal e As EventArgs)
+        MyBase.OnMouseEnter(e)
+        State = MouseState.Over : Invalidate()
+    End Sub
+ 
+    Protected Overrides Sub OnMouseDown(ByVal e As MouseEventArgs)
+        MyBase.OnMouseDown(e)
+        State = MouseState.Down : Invalidate()
+    End Sub
+ 
+    Protected Overrides Sub OnMouseLeave(ByVal e As EventArgs)
+        MyBase.OnMouseLeave(e)
+        State = MouseState.None : Invalidate()
+    End Sub
+ 
+    Protected Overrides Sub OnMouseUp(ByVal e As MouseEventArgs)
+        MyBase.OnMouseUp(e)
+        State = MouseState.Over : Invalidate()
+    End Sub
+ 
+    Protected Overrides Sub OnMouseMove(ByVal e As MouseEventArgs)
+        MyBase.OnMouseMove(e)
+    End Sub
+ 
+    Protected Overrides Sub OnClick(ByVal e As EventArgs)
+        MyBase.OnClick(e)
+        Select Case FindForm.WindowState
+            Case FormWindowState.Maximized
+                FindForm.WindowState = FormWindowState.Normal
+            Case FormWindowState.Normal
+                FindForm.WindowState = FormWindowState.Maximized
+        End Select
+    End Sub
+ 
+#End Region
+ 
+#Region " Properties "
+ 
+    Protected Overrides Sub OnResize(ByVal e As EventArgs)
+        MyBase.OnResize(e)
+        Size = New Size(16, 16)
+    End Sub
+ 
+#End Region
+ 
+    Sub New()
+        SetStyle(ControlStyles.SupportsTransparentBackColor, True)
+        SetStyle(ControlStyles.Opaque, True)
+        Anchor = AnchorStyles.Top Or AnchorStyles.Right
+    End Sub
+ 
+    Protected Overrides Sub OnPaint(ByVal e As PaintEventArgs)
+        Dim G = e.Graphics
+        G.Clear(Color.LightGray)
+        G.SmoothingMode = SmoothingMode.HighQuality
+        G.FillEllipse(New SolidBrush(Color.DarkGray), New Rectangle(2, 2, 11, 11))
+ 
+        Select Case State
+            Case MouseState.Over
+                G.FillEllipse(New SolidBrush(Color.FromArgb(80, Color.White)), New Rectangle(2, 2, 11, 11))
+            Case MouseState.Down
+                G.FillEllipse(New SolidBrush(Color.FromArgb(80, Color.Black)), New Rectangle(2, 2, 11, 11))
+        End Select
+ 
+        MyBase.OnPaint(e)
+        G.Dispose()
+    End Sub
+End Class
+ 
+Class GreywashMini
+    Inherits Control
+ 
+#Region " Declarations "
+    Private State As MouseState = MouseState.None
+#End Region
+ 
+#Region " MouseStates"
+ 
+    Protected Overrides Sub OnMouseEnter(ByVal e As EventArgs)
+        MyBase.OnMouseEnter(e)
+        State = MouseState.Over : Invalidate()
+    End Sub
+ 
+    Protected Overrides Sub OnMouseDown(ByVal e As MouseEventArgs)
+        MyBase.OnMouseDown(e)
+        State = MouseState.Down : Invalidate()
+    End Sub
+ 
+    Protected Overrides Sub OnMouseLeave(ByVal e As EventArgs)
+        MyBase.OnMouseLeave(e)
+        State = MouseState.None : Invalidate()
+    End Sub
+ 
+    Protected Overrides Sub OnMouseUp(ByVal e As MouseEventArgs)
+        MyBase.OnMouseUp(e)
+        State = MouseState.Over : Invalidate()
+    End Sub
+ 
+    Protected Overrides Sub OnMouseMove(ByVal e As MouseEventArgs)
+        MyBase.OnMouseMove(e)
+    End Sub
+ 
+    Protected Overrides Sub OnClick(ByVal e As EventArgs)
+        MyBase.OnClick(e)
+        Select Case FindForm.WindowState
+            Case FormWindowState.Normal
+                FindForm.WindowState = FormWindowState.Minimized
+            Case FormWindowState.Maximized
+                FindForm.WindowState = FormWindowState.Minimized
+        End Select
+    End Sub
+ 
+#End Region
+ 
+#Region " Properties "
+ 
+    Protected Overrides Sub OnResize(ByVal e As EventArgs)
+        MyBase.OnResize(e)
+        Size = New Size(16, 16)
+    End Sub
+ 
+#End Region
+ 
+    Sub New()
+        SetStyle(ControlStyles.SupportsTransparentBackColor, True)
+        SetStyle(ControlStyles.Opaque, True)
+        Anchor = AnchorStyles.Top Or AnchorStyles.Right
+    End Sub
+ 
+    Protected Overrides Sub OnPaint(ByVal e As PaintEventArgs)
+        Dim G = e.Graphics
+        G.Clear(Color.LightGray)
+        G.SmoothingMode = SmoothingMode.HighQuality
+        G.FillEllipse(New SolidBrush(Color.DarkGray), New Rectangle(2, 2, 11, 11))
+ 
+        Select Case State
+            Case MouseState.Over
+                G.FillEllipse(New SolidBrush(Color.FromArgb(80, Color.White)), New Rectangle(2, 2, 11, 11))
+            Case MouseState.Down
+                G.FillEllipse(New SolidBrush(Color.FromArgb(80, Color.Black)), New Rectangle(2, 2, 11, 11))
+        End Select
+ 
+        MyBase.OnPaint(e)
+        G.Dispose()
+    End Sub
+End Class
+ 
+'Theme
+ 
+Class GreywashTheme
+    Inherits ContainerControl
+ 
+#Region " Declarations "
+    Public Shared _Header As Integer = 38
+    Public Shared _SubHeader As Integer = 35
+    Private _Down As Boolean = False
+    Private _MousePoint As Point
+#End Region
+ 
+#Region " MouseStates "
+ 
+    Protected Overrides Sub OnMouseUp(ByVal e As MouseEventArgs)
+        MyBase.OnMouseUp(e)
+        _Down = False
+    End Sub
+ 
+    Protected Overrides Sub OnMouseDown(ByVal e As MouseEventArgs)
+        MyBase.OnMouseDown(e)
+        If e.Location.Y < _Header AndAlso e.Button = Windows.Forms.MouseButtons.Left Then
+            _Down = True
+            _MousePoint = e.Location
+        End If
+    End Sub
+ 
+    Protected Overrides Sub OnMouseMove(ByVal e As MouseEventArgs)
+        MyBase.OnMouseMove(e)
+        If _Down = True Then
+            ParentForm.Location = MousePosition - _MousePoint
+        End If
+    End Sub
+ 
+#End Region
+ 
+#Region " Properties "
+ 
+    Private _Center As Boolean = True
+    Public Property _TitleCenter() As Boolean
+        Get
+            Return _Center
+        End Get
+        Set(ByVal value As Boolean)
+            _Center = value
+        End Set
+    End Property
+ 
+    Public Property _HeaderSize() As Integer
+        Get
+            Return _Header
+        End Get
+        Set(ByVal value As Integer)
+            _Header = value
+        End Set
+    End Property
+ 
+    Private _SubHeaderVisable As Boolean = False
+    Public Property _SubHeaderShow() As Boolean
+        Get
+            Return _SubHeaderVisable
+        End Get
+        Set(ByVal value As Boolean)
+            _SubHeaderVisable = value
+        End Set
+    End Property
+ 
+    Public Property _SubHeaderSize() As Integer
+        Get
+            Return _SubHeader
+        End Get
+        Set(ByVal value As Integer)
+            _SubHeader = value
+        End Set
+    End Property
+ 
+#End Region
+ 
+    Protected Overrides Sub OnCreateControl()
+        MyBase.OnCreateControl()
+        ParentForm.FormBorderStyle = FormBorderStyle.None
+        ParentForm.TransparencyKey = Color.Fuchsia
+        Dock = DockStyle.Fill
+        Invalidate()
+    End Sub
+ 
+    Sub New()
+        BackColor = Color.LightGray
+    End Sub
+ 
+    Protected Overrides Sub OnPaint(ByVal e As PaintEventArgs)
+        MyBase.OnPaint(e)
+        Dim G = e.Graphics
+        G.Clear(Color.LightGray)
+        G.FillRectangle(New SolidBrush(Color.White), New Rectangle(0, _Header, Width, Height - _Header))
+        G.DrawRectangle(New Pen(Brushes.LightGray), New Rectangle(0, 0, Width - 1, Height - 1))
+        G.FillRectangle(Brushes.Fuchsia, New Rectangle(0, 0, 1, 1))
+        G.FillRectangle(Brushes.Fuchsia, New Rectangle(1, 0, 1, 1))
+        G.FillRectangle(Brushes.Fuchsia, New Rectangle(0, 1, 1, 1))
+        G.FillRectangle(Brushes.Fuchsia, New Rectangle(Width - 1, 0, 1, 1))
+        G.FillRectangle(Brushes.Fuchsia, New Rectangle(Width - 2, 0, 1, 1))
+        G.FillRectangle(Brushes.Fuchsia, New Rectangle(Width - 1, 1, 1, 1))
+        Dim _StringF As New StringFormat
+        If _Center = True Then
+            _StringF.Alignment = StringAlignment.Center
+            _StringF.LineAlignment = StringAlignment.Center
+            G.DrawString(Text, New Font("Segoe UI", 12), Brushes.White, New RectangleF(0, 0, Width, _Header), _StringF)
+        Else
+            _StringF.Alignment = StringAlignment.Near
+            _StringF.LineAlignment = StringAlignment.Center
+            G.DrawString(Text, New Font("Segoe UI", 12), Brushes.White, New RectangleF(0, 0, Width, _Header), _StringF)
+        End If
+ 
+        If _SubHeaderVisable = True Then
+            G.FillRectangle(New SolidBrush(Color.LightGray), New Rectangle(0, _Header, Width, _SubHeader))
+        Else
+ 
+        End If
+ 
+    End Sub
+ 
+End Class
+ 
+Class GreywashGroupBox
+    Inherits ContainerControl
+ 
+    Sub New()
+        Size = New Size(200, 100)
+        BackColor = Color.White
+    End Sub
+ 
+    Protected Overrides Sub OnPaint(ByVal e As PaintEventArgs)
+        MyBase.OnPaint(e)
+        Dim G = e.Graphics
+        G.Clear(BackColor)
+        G.DrawRectangle(New Pen(Color.LightGray), New Rectangle(0, 0, Width - 1, Height - 1))
+        G.FillRectangle(New SolidBrush(Color.DarkGray), New Rectangle(0, 0, Width, 30))
+        Dim _StringF As New StringFormat
+        _StringF.Alignment = StringAlignment.Center
+        _StringF.LineAlignment = StringAlignment.Center
+        G.DrawString(Text, New Font("Segoe UI", 10), Brushes.White, New RectangleF(0, 0, Width, 30), _StringF)
+    End Sub
+ 
+End Class
+ 
+<DefaultEvent("TextChanged")>
+Class GreywashTextBox
+    Inherits Control
+ 
+#Region " Declarations "
+    Private WithEvents _TextBox As Windows.Forms.TextBox
+#End Region
+ 
+#Region " Properties "
+ 
+    Private _TextAlign As HorizontalAlignment = HorizontalAlignment.Left
+    <Category("Options")> _
+    Property TextAlign() As HorizontalAlignment
+        Get
+            Return _TextAlign
+        End Get
+        Set(ByVal value As HorizontalAlignment)
+            _TextAlign = value
+            If _TextBox IsNot Nothing Then
+                _TextBox.TextAlign = value
+            End If
+        End Set
+    End Property
+    Private _MaxLength As Integer = 32767
+    <Category("Options")> _
+    Property MaxLength() As Integer
+        Get
+            Return _MaxLength
+        End Get
+        Set(ByVal value As Integer)
+            _MaxLength = value
+            If _TextBox IsNot Nothing Then
+                _TextBox.MaxLength = value
+            End If
+        End Set
+    End Property
+    Private _ReadOnly As Boolean
+    <Category("Options")> _
+    Property [ReadOnly]() As Boolean
+        Get
+            Return _ReadOnly
+        End Get
+        Set(ByVal value As Boolean)
+            _ReadOnly = value
+            If _TextBox IsNot Nothing Then
+                _TextBox.ReadOnly = value
+            End If
+        End Set
+    End Property
+    Private _UseSystemPasswordChar As Boolean
+    <Category("Options")> _
+    Property UseSystemPasswordChar() As Boolean
+        Get
+            Return _UseSystemPasswordChar
+        End Get
+        Set(ByVal value As Boolean)
+            _UseSystemPasswordChar = value
+            If _TextBox IsNot Nothing Then
+                _TextBox.UseSystemPasswordChar = value
+            End If
+        End Set
+    End Property
+    Private _Multiline As Boolean
+    <Category("Options")> _
+    Property Multiline() As Boolean
+        Get
+            Return _Multiline
+        End Get
+        Set(ByVal value As Boolean)
+            _Multiline = value
+            If _TextBox IsNot Nothing Then
+                _TextBox.Multiline = value
+ 
+                If value Then
+                    _TextBox.Height = Height - 11
+                Else
+                    Height = _TextBox.Height + 11
+                End If
+ 
+            End If
+        End Set
+    End Property
+    <Category("Options")> _
+    Overrides Property Text As String
+        Get
+            Return MyBase.Text
+        End Get
+        Set(ByVal value As String)
+            MyBase.Text = value
+            If _TextBox IsNot Nothing Then
+                _TextBox.Text = value
+            End If
+        End Set
+    End Property
+    <Category("Options")> _
+    Overrides Property Font As Font
+        Get
+            Return MyBase.Font
+        End Get
+        Set(ByVal value As Font)
+            MyBase.Font = value
+            If _TextBox IsNot Nothing Then
+                _TextBox.Font = value
+                _TextBox.Location = New Point(3, 5)
+                _TextBox.Width = Width - 6
+ 
+                If Not _Multiline Then
+                    Height = _TextBox.Height + 11
+                End If
+            End If
+        End Set
+    End Property
+ 
+    Protected Overrides Sub OnCreateControl()
+        MyBase.OnCreateControl()
+        If Not Controls.Contains(_TextBox) Then
+            Controls.Add(_TextBox)
+        End If
+    End Sub
+    Private Sub OnBaseTextChanged(ByVal s As Object, ByVal e As EventArgs)
+        Text = _TextBox.Text
+    End Sub
+    Private Sub OnBaseKeyDown(ByVal s As Object, ByVal e As KeyEventArgs)
+        If e.Control AndAlso e.KeyCode = Keys.A Then
+            _TextBox.SelectAll()
+            e.SuppressKeyPress = True
+        End If
+        If e.Control AndAlso e.KeyCode = Keys.C Then
+            _TextBox.Copy()
+            e.SuppressKeyPress = True
+        End If
+    End Sub
+    Protected Overrides Sub OnResize(ByVal e As EventArgs)
+        _TextBox.Location = New Point(5, 5)
+        _TextBox.Width = Width - 10
+ 
+        If _Multiline Then
+            _TextBox.Height = Height - 11
+        Else
+            Height = _TextBox.Height + 11
+        End If
+        MyBase.OnResize(e)
+    End Sub
+ 
+#End Region
+ 
+    Sub New()
+        SetStyle(ControlStyles.AllPaintingInWmPaint Or ControlStyles.UserPaint Or _
+                 ControlStyles.ResizeRedraw Or ControlStyles.OptimizedDoubleBuffer Or _
+                 ControlStyles.SupportsTransparentBackColor, True)
+        DoubleBuffered = True
+ 
+        BackColor = Color.Transparent
+ 
+        _TextBox = New Windows.Forms.TextBox
+        _TextBox.Font = New Font("Segoe UI", 10)
+        _TextBox.Text = Text
+        _TextBox.BackColor = Color.White
+        _TextBox.ForeColor = Color.Gray
+        _TextBox.MaxLength = _MaxLength
+        _TextBox.Multiline = _Multiline
+        _TextBox.ReadOnly = _ReadOnly
+        _TextBox.UseSystemPasswordChar = _UseSystemPasswordChar
+        _TextBox.BorderStyle = BorderStyle.None
+        _TextBox.Location = New Point(5, 5)
+        _TextBox.Width = Width - 10
+ 
+        _TextBox.Cursor = Cursors.IBeam
+ 
+        If _Multiline Then
+            _TextBox.Height = Height - 11
+        Else
+            Height = _TextBox.Height + 11
+        End If
+ 
+        AddHandler _TextBox.TextChanged, AddressOf OnBaseTextChanged
+        AddHandler _TextBox.KeyDown, AddressOf OnBaseKeyDown
+    End Sub
+ 
+    Protected Overrides Sub OnPaint(ByVal e As PaintEventArgs)
+        MyBase.OnPaint(e)
+        Dim G = e.Graphics
+        Dim GP, GP1 As New GraphicsPath
+        Dim Base As New Rectangle(0, 0, Width - 1, Height - 1)
+        Dim BorderBase As New Rectangle(0, 0, Width - 1, Height - 1)
+        GP = DrawHelpers.RoundRec(Base, 1)
+        GP1 = DrawHelpers.RoundRec(BorderBase, 1)
+        G.FillPath(New SolidBrush(Color.White), GP)
+        G.DrawPath(New Pen(Color.LightGray), GP1)
+    End Sub
+ 
+End Class
+ 
+Public Class GreywashButton
+    Inherits Control
+ 
+#Region " Declarations "
+    Private State As MouseState = MouseState.None
+    Private _MainColour As Color = Color.DarkGray
+    Private _TextColour As Color = Color.White
+    Private _HoverColour As Color = Color.LightGray
+#End Region
+ 
+#Region " MouseStates "
+ 
+    Protected Overrides Sub OnMouseDown(ByVal e As MouseEventArgs)
+        MyBase.OnMouseDown(e)
+        State = MouseState.Down : Invalidate()
+    End Sub
+ 
+    Protected Overrides Sub OnMouseUp(ByVal e As MouseEventArgs)
+        MyBase.OnMouseUp(e)
+        State = MouseState.Over : Invalidate()
+    End Sub
+ 
+    Protected Overrides Sub OnMouseEnter(ByVal e As EventArgs)
+        MyBase.OnMouseEnter(e)
+        State = MouseState.Over : Invalidate()
+    End Sub
+ 
+    Protected Overrides Sub OnMouseLeave(ByVal e As EventArgs)
+        MyBase.OnMouseLeave(e)
+        State = MouseState.None : Invalidate()
+    End Sub
+ 
+#End Region
+ 
+#Region " Properties "
+ 
+    <Category("Colours"), Description("Background Colour Selection")> _
+    Public Property BackgroundColour As Color
+        Get
+            Return _MainColour
+        End Get
+        Set(ByVal value As Color)
+            _MainColour = value
+        End Set
+    End Property
+ 
+    <Category("Colours"), Description("Text Colour Selection")> _
+    Public Property TextColour As Color
+        Get
+            Return _TextColour
+        End Get
+        Set(ByVal value As Color)
+            _TextColour = value
+        End Set
+    End Property
+ 
+#End Region
+ 
+    Sub New()
+        SetStyle(ControlStyles.AllPaintingInWmPaint Or ControlStyles.UserPaint Or _
+                ControlStyles.ResizeRedraw Or ControlStyles.OptimizedDoubleBuffer Or _
+                ControlStyles.SupportsTransparentBackColor, True)
+        DoubleBuffered = True
+        Size = New Size(135, 29)
+        BackColor = Color.Transparent
+        Font = New Font("Segoe UI", 10)
+    End Sub
+ 
+    Protected Overrides Sub OnPaint(ByVal e As PaintEventArgs)
+        Dim B As New Bitmap(Width, Height)
+        Dim G = Graphics.FromImage(B)
+        Dim GP, GP1 As New GraphicsPath
+        Dim Base As New Rectangle(0, 0, Width - 1, Height - 1)
+        With G
+            .TextRenderingHint = TextRenderingHint.ClearTypeGridFit
+            .SmoothingMode = SmoothingMode.HighQuality
+            .PixelOffsetMode = PixelOffsetMode.HighQuality
+            .Clear(BackColor)
+            Select Case State
+                Case MouseState.None
+                    GP = DrawHelpers.RoundRec(Base, 1)
+                    .FillPath(New SolidBrush(_MainColour), GP)
+                    .DrawString(Text, Font, New SolidBrush(_TextColour), Base, New StringFormat With {.LineAlignment = StringAlignment.Center, .Alignment = StringAlignment.Center})
+                Case MouseState.Over
+                    GP = DrawHelpers.RoundRec(Base, 1)
+                    .FillPath(New SolidBrush(_HoverColour), GP)
+                    .DrawString(Text, Font, New SolidBrush(_TextColour), Base, New StringFormat With {.LineAlignment = StringAlignment.Center, .Alignment = StringAlignment.Center})
+                Case MouseState.Down
+                    GP = DrawHelpers.RoundRec(Base, 1)
+                    .FillPath(New SolidBrush(_HoverColour), GP)
+                    .DrawString(Text, Font, New SolidBrush(_TextColour), Base, New StringFormat With {.LineAlignment = StringAlignment.Center, .Alignment = StringAlignment.Center})
+                    GP1 = DrawHelpers.RoundRec(New Rectangle(0, 0, Width, Height), 3)
+                    '.DrawPath(New Pen(New SolidBrush(Color.Gray), 2), GP1)
+            End Select
+        End With
+        MyBase.OnPaint(e)
+        e.Graphics.InterpolationMode = InterpolationMode.HighQualityBicubic
+        e.Graphics.DrawImageUnscaled(B, 0, 0)
+        B.Dispose()
+    End Sub
+ 
+End Class
+ 
+Class GreywashProgressBar
+    Inherits Control
+ 
+#Region " Properties "
+ 
+    Private _Maximum As Integer
+    Public Property Maximum As Integer
+        Get
+            Return _Maximum
+        End Get
+        Set(ByVal value As Integer)
+            _Maximum = value
+            Invalidate()
+        End Set
+    End Property
+ 
+    Private _Minimum As Integer
+    Public Property Minimum As Integer
+        Get
+            Return _Minimum
+        End Get
+        Set(ByVal value As Integer)
+            _Minimum = value
+            Invalidate()
+        End Set
+    End Property
+ 
+    Private _Value As Integer
+    Public Property Value As Integer
+        Get
+            Return _Value
+        End Get
+        Set(ByVal value As Integer)
+            _Value = value
+            Invalidate()
+        End Set
+    End Property
+ 
+#End Region
+ 
+    Sub New()
+        Maximum = 100
+        Minimum = 0
+        Value = 0
+    End Sub
+ 
+    Protected Overrides Sub OnPaint(ByVal e As PaintEventArgs)
+        MyBase.OnPaint(e)
+        Dim G = e.Graphics
+        G.DrawRectangle(New Pen(Color.DarkGray), New Rectangle(0, 0, Width - 1, Height - 1))
+        G.FillRectangle(New SolidBrush(Color.DarkGray), New Rectangle(0, 0, Width - 1, Height - 1))
+        Select Case _Value
+            Case Is > 2
+                G.FillRectangle(New SolidBrush(Color.LightGray), New Rectangle(0, 0, CInt(Value / Maximum * Width), Height))
+                G.FillRectangle(New SolidBrush(Color.FromArgb(100, Color.Red)), New Rectangle(0, 0, CInt(Value / Maximum * Width), Height))
+            Case Is > 0
+                G.FillRectangle(New SolidBrush(Color.LightGray), New Rectangle(0, 0, CInt(Value / Maximum * Width), Height))
+                G.FillRectangle(New SolidBrush(Color.FromArgb(100, Color.Red)), New Rectangle(0, 0, CInt(Value / Maximum * Width), Height))
+        End Select
+    End Sub
+ 
+End Class
+ 
+Public Class GreywashComboBox
+    Inherits ComboBox
+ 
+#Region " Declarations "
+    Private _StartIndex As Integer = 0
+    Private _BorderColour As Color = Color.LightGray
+    Private _BaseColour As Color = Color.White
+    Private _FontColour As Color = Color.Gray
+    Private _LineColour As Color = Color.White
+    Private _SqaureColour As Color = Color.DarkGray
+    Private _SqaureHoverColour As Color = Color.LightGray
+    Private State As MouseState = MouseState.None
+#End Region
+ 
+#Region " Properties "
+ 
+    <Category("Colours")>
+    Public Property LineColour As Color
+        Get
+            Return _LineColour
+        End Get
+        Set(ByVal value As Color)
+            _LineColour = value
+        End Set
+    End Property
+ 
+    <Category("Colours")>
+    Public Property SqaureColour As Color
+        Get
+            Return _SqaureColour
+        End Get
+        Set(ByVal value As Color)
+            _SqaureColour = value
+        End Set
+    End Property
+ 
+    <Category("Colours")>
+    Public Property SqaureHoverColour As Color
+        Get
+            Return _SqaureHoverColour
+        End Get
+        Set(ByVal value As Color)
+            _SqaureHoverColour = value
+        End Set
+    End Property
+ 
+    Protected Overrides Sub OnMouseEnter(ByVal e As EventArgs)
+        MyBase.OnMouseEnter(e)
+        State = MouseState.Over : Invalidate()
+    End Sub
+ 
+    Protected Overrides Sub OnMouseLeave(ByVal e As EventArgs)
+        MyBase.OnMouseLeave(e)
+        State = MouseState.None : Invalidate()
+    End Sub
+ 
+    <Category("Colours")>
+    Public Property BorderColour As Color
+        Get
+            Return _BorderColour
+        End Get
+        Set(ByVal value As Color)
+            _BorderColour = value
+        End Set
+    End Property
+ 
+    <Category("Colours")>
+    Public Property BaseColour As Color
+        Get
+            Return _BaseColour
+        End Get
+        Set(ByVal value As Color)
+            _BaseColour = value
+        End Set
+    End Property
+ 
+    <Category("Colours")>
+    Public Property FontColour As Color
+        Get
+            Return _FontColour
+        End Get
+        Set(ByVal value As Color)
+            _FontColour = value
+        End Set
+    End Property
+ 
+    Public Property StartIndex As Integer
+        Get
+            Return _StartIndex
+        End Get
+        Set(ByVal value As Integer)
+            _StartIndex = value
+            Try
+                MyBase.SelectedIndex = value
+            Catch
+            End Try
+            Invalidate()
+        End Set
+    End Property
+ 
+    Protected Overrides Sub OnTextChanged(ByVal e As System.EventArgs)
+        MyBase.OnTextChanged(e)
+        Invalidate()
+    End Sub
+ 
+    Protected Overrides Sub OnMouseDown(ByVal e As MouseEventArgs)
+        Invalidate()
+        OnMouseClick(e)
+    End Sub
+ 
+    Protected Overrides Sub OnMouseUp(ByVal e As System.Windows.Forms.MouseEventArgs)
+        Invalidate()
+        MyBase.OnMouseUp(e)
+    End Sub
+ 
+#End Region
+ 
+    Sub ReplaceItem(ByVal sender As System.Object, ByVal e As System.Windows.Forms.DrawItemEventArgs) Handles Me.DrawItem
+        e.DrawBackground()
+        Dim Rect As New Rectangle(e.Bounds.X, e.Bounds.Y, e.Bounds.Width, e.Bounds.Height)
+        Try
+            With e.Graphics
+                If (e.State And DrawItemState.Selected) = DrawItemState.Selected Then
+                    .FillRectangle(New SolidBrush(_SqaureColour), Rect)
+                    .DrawString(MyBase.GetItemText(MyBase.Items(e.Index)), Font, New SolidBrush(_FontColour), 1, e.Bounds.Top + 2)
+                Else
+                    .FillRectangle(New SolidBrush(_BaseColour), Rect)
+                    .DrawString(MyBase.GetItemText(MyBase.Items(e.Index)), Font, New SolidBrush(_FontColour), 1, e.Bounds.Top + 2)
+                End If
+            End With
+        Catch
+        End Try
+        e.DrawFocusRectangle()
+        Invalidate()
+ 
+    End Sub
+ 
+    Sub New()
+        SetStyle(ControlStyles.AllPaintingInWmPaint Or ControlStyles.UserPaint Or _
+               ControlStyles.ResizeRedraw Or ControlStyles.OptimizedDoubleBuffer Or _
+               ControlStyles.SupportsTransparentBackColor, True)
+        DoubleBuffered = True
+        BackColor = Color.Transparent
+        DrawMode = Windows.Forms.DrawMode.OwnerDrawFixed
+        DropDownStyle = ComboBoxStyle.DropDownList
+        Width = 163
+        Font = New Font("Segoe UI", 10)
+    End Sub
+ 
+    Protected Overrides Sub OnPaint(ByVal e As PaintEventArgs)
+        Dim B As New Bitmap(Width, Height)
+        Dim G = Graphics.FromImage(B)
+        With G
+            .Clear(BackColor)
+            Try
+                Dim Square As New Rectangle(Width - 25, 0, Width, Height)
+                .FillRectangle(New SolidBrush(_BaseColour), New Rectangle(0, 0, Width - 25, Height))
+                .DrawLine(New Pen(_LineColour), New Point(Width - 26, 1), New Point(Width - 26, Height))
+                Try
+                    .DrawString(Text, Font, New SolidBrush(_FontColour), New Rectangle(3, 0, Width - 20, Height), New StringFormat With {.LineAlignment = StringAlignment.Center, .Alignment = StringAlignment.Near})
+                Catch : End Try
+                .DrawRectangle(New Pen(_BorderColour, 2), New Rectangle(0, 0, Width, Height))
+                Select Case State
+                    Case MouseState.None
+                        .FillRectangle(New SolidBrush(_SqaureColour), Square)
+                    Case MouseState.Over
+                        .FillRectangle(New SolidBrush(_SqaureHoverColour), Square)
+                End Select
+            Catch
+            End Try
+        End With
+        MyBase.OnPaint(e)
+        G.Dispose()
+        e.Graphics.InterpolationMode = 7
+        e.Graphics.DrawImageUnscaled(B, 0, 0)
+        B.Dispose()
+    End Sub
+ 
+End Class
+ 
+Class GreywashTabControl
+    Inherits Windows.Forms.TabControl
+ 
+#Region " Declarations "
+    Dim LightColor As Color = Color.DarkGray
+    Dim DarkColor As Color = Color.LightGray
+    Dim LightBrush As New SolidBrush(LightColor)
+    Dim DarkBrush As New SolidBrush(DarkColor)
+    Dim NotSelectedColor As New SolidBrush(Color.LightGray)
+    Dim SelectedColor As New SolidBrush(Color.DarkGray)
+#End Region
+ 
+    Sub New()
+        SetStyle(ControlStyles.UserPaint Or ControlStyles.Opaque Or ControlStyles.ResizeRedraw Or ControlStyles.AllPaintingInWmPaint Or ControlStyles.Opaque, True)
+        SetStyle(ControlStyles.Selectable, False)
+        Dock = DockStyle.None
+        SizeMode = TabSizeMode.Fixed
+        Alignment = TabAlignment.Left
+        ItemSize = New Size(25, 120)
+        DrawMode = TabDrawMode.OwnerDrawFixed
+        Font = New Font("Segoe UI", 10)
+    End Sub
+ 
+    Protected Overrides Sub CreateHandle()
+        MyBase.CreateHandle()
+        Alignment = TabAlignment.Left
+    End Sub
+ 
+    Protected Overrides Sub OnPaint(ByVal e As System.Windows.Forms.PaintEventArgs)
+        Dim bm As New Bitmap(Width, Height)
+        Dim g As Graphics = Graphics.FromImage(bm)
+        g.Clear(DarkColor)
+ 
+        For i = 0 To TabCount - 1
+            Dim TabRectangle As Rectangle = GetTabRect(i)
+            If i = SelectedIndex Then
+                g.FillRectangle(LightBrush, TabRectangle)
+                g.FillRectangle(SelectedColor, New Rectangle(TabRectangle.Location.X + 2, TabRectangle.Location.Y + 2, 3, TabRectangle.Height - 4))
+            Else
+                g.FillRectangle(DarkBrush, TabRectangle)
+                g.FillRectangle(NotSelectedColor, New Rectangle(TabRectangle.Location.X + 2, TabRectangle.Location.Y + 2, 3, TabRectangle.Height - 4))
+            End If
+            g.DrawString(TabPages(i).Text, Font, Brushes.White, TabRectangle, New StringFormat With {.Alignment = StringAlignment.Center, .LineAlignment = StringAlignment.Center})
+        Next
+ 
+        e.Graphics.DrawImage(bm.Clone, 0, 0)
+        g.Dispose() : bm.Dispose()
+        MyBase.OnPaint(e)
+    End Sub
+ 
+End Class
+ 
+<DefaultEvent("CheckedChanged")>
+Class GreywashCheckBox
+    Inherits Control
+ 
+#Region " Declarations "
+    Private _Checked As Boolean
+#End Region
+ 
+#Region " Properties "
+    Protected Overrides Sub OnTextChanged(ByVal e As System.EventArgs)
+        MyBase.OnTextChanged(e)
+        Invalidate()
+    End Sub
+ 
+    Property Checked() As Boolean
+        Get
+            Return _Checked
+        End Get
+        Set(ByVal value As Boolean)
+            _Checked = value
+            Invalidate()
+        End Set
+    End Property
+ 
+    Event CheckedChanged(ByVal sender As Object)
+    Protected Overrides Sub OnClick(ByVal e As System.EventArgs)
+        If Not _Checked Then
+            Checked = True
+        Else
+            Checked = False
+        End If
+        RaiseEvent CheckedChanged(Me)
+        MyBase.OnClick(e)
+    End Sub
+ 
+    Protected Overrides Sub OnResize(ByVal e As EventArgs)
+        MyBase.OnResize(e)
+        Height = 16
+    End Sub
+ 
+#End Region
+ 
+    Protected Overrides Sub OnPaint(ByVal e As PaintEventArgs)
+        MyBase.OnPaint(e)
+        Dim G = e.Graphics
+ 
+        If Parent.BackColor = Color.LightGray Then
+            G.Clear(BackColor)
+            G.FillRectangle(New SolidBrush(Color.DarkGray), New Rectangle(0, 0, 15, 15))
+            G.DrawString(Text, New Font("Segoe UI", 10), Brushes.White, New Point(18, -2))
+        Else
+            G.Clear(Color.White)
+            G.FillRectangle(New SolidBrush(Color.DarkGray), New Rectangle(0, 0, 15, 15))
+            G.DrawString(Text, New Font("Segoe UI", 10), Brushes.Gray, New Point(18, -2))
+        End If
+        If Checked Then
+            G.FillRectangle(New SolidBrush(Color.LightGray), New Rectangle(4, 4, 7, 7))
+            G.FillRectangle(New SolidBrush(Color.FromArgb(100, Color.Red)), New Rectangle(4, 4, 7, 7))
+        End If
+ 
+    End Sub
+End Class
+ 
+Class GreywashListBox
+    Inherits Control
+ 
+#Region " Declarations "
+    Private WithEvents ListB As New ListBox
+    Private _Items As String() = {""}
+    Private _BaseColour As Color = Color.White
+    Private _SelectedColour As Color = Color.DarkGray
+    Private _ListBaseColour As Color = Color.White
+    Private _TextColour As Color = Color.Gray
+    Private _BorderColour As Color = Color.LightGray
+#End Region
+ 
+#Region " Properties "
+ 
+    <Category("Control")> _
+    Public Property Items As String()
+        Get
+            Return _Items
+        End Get
+        Set(ByVal value As String())
+            _Items = value
+            ListB.Items.Clear()
+            ListB.Items.AddRange(value)
+            Invalidate()
+        End Set
+    End Property
+ 
+    <Category("Colours")> _
+    Public Property BorderColour As Color
+        Get
+            Return _BorderColour
+        End Get
+        Set(ByVal value As Color)
+            _BorderColour = value
+        End Set
+    End Property
+ 
+    <Category("Colours")> _
+    Public Property SelectedColour As Color
+        Get
+            Return _SelectedColour
+        End Get
+        Set(ByVal value As Color)
+            _SelectedColour = value
+        End Set
+    End Property
+ 
+    <Category("Colours")> _
+    Public Property BaseColour As Color
+        Get
+            Return _BaseColour
+        End Get
+        Set(ByVal value As Color)
+            _BaseColour = value
+        End Set
+    End Property
+ 
+    <Category("Colours")> _
+    Public Property ListBaseColour As Color
+        Get
+            Return _ListBaseColour
+        End Get
+        Set(ByVal value As Color)
+            _ListBaseColour = value
+        End Set
+    End Property
+ 
+    <Category("Colours")> _
+    Public Property TextColour As Color
+        Get
+            Return _TextColour
+        End Get
+        Set(ByVal value As Color)
+            _TextColour = value
+        End Set
+    End Property
+ 
+    Public ReadOnly Property SelectedItem() As String
+        Get
+            Return ListB.SelectedItem
+        End Get
+    End Property
+ 
+    Public ReadOnly Property SelectedIndex() As Integer
+        Get
+            Return ListB.SelectedIndex
+            If ListB.SelectedIndex < 0 Then Exit Property
+        End Get
+    End Property
+ 
+    Public Sub Clear()
+        ListB.Items.Clear()
+    End Sub
+ 
+    Public Sub ClearSelected()
+        For i As Integer = (ListB.SelectedItems.Count - 1) To 0 Step -1
+            ListB.Items.Remove(ListB.SelectedItems(i))
+        Next
+    End Sub
+ 
+    Protected Overrides Sub OnCreateControl()
+        MyBase.OnCreateControl()
+        If Not Controls.Contains(ListB) Then
+            Controls.Add(ListB)
+        End If
+    End Sub
+ 
+    Sub AddRange(ByVal items As Object())
+        ListB.Items.Remove("")
+        ListB.Items.AddRange(items)
+    End Sub
+ 
+    Sub AddItem(ByVal item As Object)
+        ListB.Items.Remove("")
+        ListB.Items.Add(item)
+    End Sub
+ 
+#End Region
+ 
+    Sub Drawitem(ByVal sender As Object, ByVal e As DrawItemEventArgs) Handles ListB.DrawItem
+        If e.Index < 0 Then Exit Sub
+        e.DrawBackground()
+        e.DrawFocusRectangle()
+        With e.Graphics
+            If InStr(e.State.ToString, "Selected,") > 0 Then
+                .FillRectangle(New SolidBrush(_SelectedColour), New Rectangle(e.Bounds.X, e.Bounds.Y, e.Bounds.Width, e.Bounds.Height))
+                .DrawString(" " & ListB.Items(e.Index).ToString(), New Font("Segoe UI", 10), New SolidBrush(Color.White), e.Bounds.X, e.Bounds.Y + 2)
+            Else
+                .FillRectangle(New SolidBrush(_ListBaseColour), New Rectangle(e.Bounds.X, e.Bounds.Y, e.Bounds.Width, e.Bounds.Height))
+                .DrawString(" " & ListB.Items(e.Index).ToString(), New Font("Segoe UI", 10), New SolidBrush(_TextColour), e.Bounds.X, e.Bounds.Y + 2)
+            End If
+            .Dispose()
+        End With
+    End Sub
+ 
+    Sub New()
+        SetStyle(ControlStyles.AllPaintingInWmPaint Or ControlStyles.UserPaint Or _
+            ControlStyles.ResizeRedraw Or ControlStyles.OptimizedDoubleBuffer, True)
+        DoubleBuffered = True
+        ListB.DrawMode = Windows.Forms.DrawMode.OwnerDrawFixed
+        ListB.ScrollAlwaysVisible = False
+        ListB.HorizontalScrollbar = False
+        ListB.BorderStyle = BorderStyle.None
+        ListB.BackColor = _BaseColour
+        ListB.Location = New Point(3, 3)
+        ListB.Font = New Font("Segoe UI", 10)
+        ListB.ItemHeight = 20
+        ListB.Items.Clear()
+        ListB.IntegralHeight = False
+        Size = New Size(130, 100)
+    End Sub
+ 
+    Protected Overrides Sub OnPaint(ByVal e As PaintEventArgs)
+        Dim B As New Bitmap(Width, Height)
+        Dim G = Graphics.FromImage(B)
+        Dim Base As New Rectangle(0, 0, Width, Height)
+        With G
+            .Clear(BackColor)
+            ListB.Size = New Size(Width - 6, Height - 5)
+            .FillRectangle(New SolidBrush(_BaseColour), Base)
+            .DrawRectangle(New Pen(_BorderColour, -1), New Rectangle(0, 0, Width - 1, Height - 1))
+        End With
+        MyBase.OnPaint(e)
+        G.Dispose()
+        e.Graphics.DrawImageUnscaled(B, 0, 0)
+        B.Dispose()
+    End Sub
+ 
+End Class

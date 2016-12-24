@@ -1,0 +1,298 @@
+Imports System.Drawing.Drawing2D
+
+'-----11/16/2015-----'
+'--------------------'
+'--------VmX5--------'
+'---Please Credit!---'
+'--------------------'
+'-----11/16/2015-----'
+
+Public Class Bitdefender_Form
+    Inherits ContainerControl
+    Private drag As Boolean = False
+    Private savePoint As New Point(0, 0)
+    Sub New()
+        DoubleBuffered = True
+        Dock = DockStyle.Fill
+        Font = New Font("Segoe UI", 12)
+    End Sub
+
+    Protected Overrides Sub OnCreateControl()
+        MyBase.OnCreateControl()
+        FindForm.FormBorderStyle = FormBorderStyle.None
+        FindForm.BackColor = ColorTranslator.FromHtml("#212426")
+    End Sub
+
+    Protected Overrides Sub OnPaint(e As PaintEventArgs)
+        MyBase.OnPaint(e)
+        Dim g As Graphics = e.Graphics
+        g.SmoothingMode = Drawing2D.SmoothingMode.HighQuality
+
+        g.FillRectangle(New SolidBrush(ColorTranslator.FromHtml("#212426")), -1, -1, Width + 1, Height + 1)
+        g.DrawLine(New Pen(ColorTranslator.FromHtml("#40474d")), 1, 51, Width, 51)
+
+        g.DrawString("0", New Font("Marlett", 12), New SolidBrush(ColorTranslator.FromHtml("#808d98")), Width - 60, 12)
+        g.DrawString("0", New Font("Marlett", 12), New SolidBrush(ColorTranslator.FromHtml("#808d98")), Width - 65, 12)
+        g.DrawString("r", New Font("Marlett", 12), New SolidBrush(ColorTranslator.FromHtml("#808d98")), Width - 29, 12)
+
+
+        g.DrawString(Text, Font, Brushes.White, (Width / 2) - (g.MeasureString(Text, Font).Width / 2), 25 - (g.MeasureString(Text, Font).Height / 2))
+    End Sub
+
+    Protected Overrides Sub OnMouseDown(e As MouseEventArgs)
+        MyBase.OnMouseDown(e)
+        If New Rectangle(731, 12, 21.8, 18).Contains(e.X, e.Y) Then
+            Application.Exit()
+        End If
+        If New Rectangle(695, 12, 21.8, 18).Contains(e.X, e.Y) Then
+            FindForm.WindowState = FormWindowState.Minimized
+        End If
+
+        If New Rectangle(0, 0, Width, 51).Contains(e.X, e.Y) Then
+            drag = True
+            savePoint = New Point(e.X, e.Y)
+        Else
+            drag = False
+        End If
+    End Sub
+
+    Protected Overrides Sub OnMouseUp(e As MouseEventArgs)
+        MyBase.OnMouseUp(e)
+        drag = False
+    End Sub
+
+    Protected Overrides Sub OnMouseMove(e As MouseEventArgs)
+        MyBase.OnMouseMove(e)
+        Dim g As Graphics = CreateGraphics()
+        If drag Then
+            Dim screenPoint As Point = PointToScreen(e.Location)
+            FindForm().Location = New Point(screenPoint.X - Me.savePoint.X, screenPoint.Y - Me.savePoint.Y)
+        End If
+        Invalidate()
+    End Sub
+End Class
+
+Public Class Bitdefender_Button
+    Inherits Control
+    Public _Image As Image
+
+    Public Property Image As Image
+        Get
+            Return _Image
+        End Get
+        Set(value As Image)
+            _Image = value
+            Invalidate()
+        End Set
+    End Property
+    Sub New()
+        Size = New Size(172, 172)
+        DoubleBuffered = True
+    End Sub
+    Protected Overrides Sub OnPaint(e As PaintEventArgs)
+        MyBase.OnPaint(e)
+        Dim g As Graphics = e.Graphics
+        g.SmoothingMode = Drawing2D.SmoothingMode.HighQuality
+        g.FillRectangle(New SolidBrush(ColorTranslator.FromHtml("#555e66")), -1, -1, Width + 1, Height + 1)
+        If _Image IsNot Nothing Then
+            g.DrawImage(_Image, New Rectangle(Width / 2 - 25, Height / 2 - 25, 50, 50))
+            g.DrawString(Text, Font, Brushes.White, (Width / 2) - (g.MeasureString(Text, Font).Width / 2) + 1, (Height / 2) + 35)
+        Else
+            g.DrawString(Text, Font, Brushes.White, (Width / 2) - (g.MeasureString(Text, Font).Width / 2) + 1, (Height / 2) - (g.MeasureString(Text, Font).Height / 2))
+        End If
+    End Sub
+End Class
+
+Public Class Bitdefender_Button_Small
+    Inherits Control
+    Public _Image As Image 
+    Public Property Image As Image
+        Get
+            Return _Image
+        End Get
+        Set(value As Image)
+            _Image = value
+            Invalidate()
+        End Set
+    End Property
+    Sub New()
+        Size = New Size(84, 84)
+        DoubleBuffered = True
+    End Sub
+
+    Protected Overrides Sub OnPaint(e As PaintEventArgs)
+        MyBase.OnPaint(e)
+        Dim g As Graphics = e.Graphics
+        g.SmoothingMode = Drawing2D.SmoothingMode.HighQuality
+
+        g.FillRectangle(New SolidBrush(ColorTranslator.FromHtml("#40474d  ")), -1, -1, Width + 1, Height + 1)
+
+        If _Image IsNot Nothing Then
+            g.DrawImage(_Image, New Rectangle(Width / 2 - 15, Height / 2 - 15, 30, 30))
+            g.DrawString(Text, Font, Brushes.White, (Width / 2) - (g.MeasureString(Text, Font).Width / 2) + 1, (Height / 2) + 20)
+        Else
+            g.DrawString(Text, Font, Brushes.White, (Width / 2) - (g.MeasureString(Text, Font).Width / 2) + 1, (Height / 2) - (g.MeasureString(Text, Font).Height / 2))
+        End If
+    End Sub
+
+End Class
+
+Public Class Bitdefender_Flip_Switch
+    Inherits Control
+
+    Public _checked As Boolean = False
+
+    Public Property Checked As Boolean
+        Get
+            Return _checked
+        End Get
+        Set(value As Boolean)
+            _checked = value
+            Invalidate()
+        End Set
+    End Property
+
+    Sub New()
+        DoubleBuffered = True
+        Size = New Size(60, 30)
+    End Sub
+
+    Protected Overrides Sub OnPaint(e As PaintEventArgs)
+        MyBase.OnPaint(e)
+        Dim g As Graphics = e.Graphics
+        g.TextRenderingHint = Drawing.Text.TextRenderingHint.AntiAlias
+
+        g.FillRectangle(New SolidBrush(ColorTranslator.FromHtml("#3f464c")), -1, -1, Width + 1, Height + 1)
+
+        If _checked Then
+            g.FillRectangle(New SolidBrush(ColorTranslator.FromHtml("#202325")), 2, 2, 27, 26)
+            g.DrawString("✓", New Font("Segoe UI Light", 12), New SolidBrush(ColorTranslator.FromHtml("#808d98")), 4.5, 4)
+        Else
+            g.FillRectangle(New SolidBrush(ColorTranslator.FromHtml("#202325")), 31, 2, 27, 26)
+            g.DrawString("r", New Font("Marlett", 12), New SolidBrush(ColorTranslator.FromHtml("#808d98")), 34.5, 6.7)
+        End If
+    End Sub
+
+    Protected Overrides Sub OnMouseDown(e As MouseEventArgs)
+        MyBase.OnMouseDown(e)
+        If New Rectangle(2, 2, 27, 26).Contains(e.X, e.Y) Then
+            If Checked = True Then
+                Checked = False
+            Else
+                Checked = True
+            End If
+        ElseIf New Rectangle(31, 2, 27, 26).Contains(e.X, e.Y) Then
+            If Checked = True Then
+                Checked = False
+            Else
+                Checked = True
+            End If
+        End If
+    End Sub
+
+End Class
+
+Public Class Bitdefender_ComboBox
+    Inherits ComboBox
+    Sub ReplaceItem(ByVal sender As System.Object, ByVal e As Windows.Forms.DrawItemEventArgs) Handles Me.DrawItem
+        e.DrawBackground()
+        If (e.State And DrawItemState.Selected) = DrawItemState.Selected Then
+            e.Graphics.FillRectangle(New SolidBrush(ColorTranslator.FromHtml("#4b5359")), e.Bounds.X, e.Bounds.Y, e.Bounds.Width, e.Bounds.Height)
+        Else
+            e.Graphics.FillRectangle(New SolidBrush(ColorTranslator.FromHtml("#4b5359")), e.Bounds.X, e.Bounds.Y, e.Bounds.Width, e.Bounds.Height)
+        End If
+        e.Graphics.DrawString(GetItemText(Items(e.Index)), e.Font, Brushes.White, New Rectangle(e.Bounds.X, e.Bounds.Y, e.Bounds.Width, e.Bounds.Height))
+
+    End Sub
+
+    Sub New()
+        SetStyle(ControlStyles.AllPaintingInWmPaint Or ControlStyles.UserPaint Or _
+               ControlStyles.ResizeRedraw Or ControlStyles.OptimizedDoubleBuffer Or _
+               ControlStyles.SupportsTransparentBackColor, True)
+        DoubleBuffered = True
+        DrawMode = Windows.Forms.DrawMode.OwnerDrawFixed
+        DropDownStyle = ComboBoxStyle.DropDownList
+        Width = 120
+        Font = New Font("Segoe UI", 12)
+    End Sub
+
+    Protected Overrides Sub OnPaint(ByVal e As PaintEventArgs)
+        MyBase.OnPaint(e)
+        Dim g As Graphics = e.Graphics
+        Dim Square As New Rectangle(Width - 25, 0, Width, Height)
+        g.FillRectangle(New SolidBrush(ColorTranslator.FromHtml("#4b5359")), New Rectangle(0, 0, Width, Height))
+        g.DrawString(Text, Font, Brushes.White, New Rectangle(3, 0, Width - 20, Height), New StringFormat With {.LineAlignment = StringAlignment.Center, .Alignment = StringAlignment.Near})
+        g.DrawString("6", New Font("Marlett", 10), Brushes.White, Width - 20, 10)
+    End Sub
+
+End Class
+
+Public Class Bitdefender_Checkmark
+    Inherits Control
+
+    Sub New()
+        Size = New Size(120, 120)
+    End Sub
+
+    Protected Overrides Sub OnPaint(e As PaintEventArgs)
+        MyBase.OnPaint(e)
+        Dim g As Graphics = e.Graphics
+        g.SmoothingMode = SmoothingMode.HighQuality
+        g.Clear(ColorTranslator.FromHtml("#212426"))
+        g.DrawEllipse(New Pen(ColorTranslator.FromHtml("#7eba18"), 2), 1, 1, 117, 117)
+        g.DrawString("✓", New Font("Segoe UI Bold", 52), New SolidBrush(ColorTranslator.FromHtml("#7eba18")), (Width / 2) - (g.MeasureString("b", New Font("Marlett", 52)).Width / 2), (Height / 2) - (g.MeasureString("b", New Font("Marlett", 52)).Height / 2))
+    End Sub
+End Class
+
+Public Class Bitdefender_xMark
+    Inherits Control
+
+    Sub New()
+        Size = New Size(120, 120)
+    End Sub
+
+    Protected Overrides Sub OnPaint(e As PaintEventArgs)
+        MyBase.OnPaint(e)
+        Dim g As Graphics = e.Graphics
+        g.SmoothingMode = SmoothingMode.HighQuality
+        g.Clear(ColorTranslator.FromHtml("#212426"))
+        g.DrawEllipse(New Pen(ColorTranslator.FromHtml("#e85353"), 2), 1, 1, 117, 117)
+        g.DrawString("✕", New Font("Segoe UI Bold", 52), New SolidBrush(ColorTranslator.FromHtml("#e85353")), (Width / 2) - (g.MeasureString("b", New Font("Marlett", 52)).Width / 2), (Height / 2) - (g.MeasureString("b", New Font("Marlett", 52)).Height / 2))
+    End Sub
+End Class
+
+Public Class Bitdefender_Label
+    Inherits Label
+    Sub New()
+        BackColor = ColorTranslator.FromHtml("#212426")
+        ForeColor = ColorTranslator.FromHtml("#8f9da6")
+        Font = New Font("Segoe UI", 11)
+    End Sub
+End Class
+
+Public Class Bitdefender_Link_Label
+    Inherits Label
+    Public _url As String
+    Public Property URL As String
+        Get
+            Return _url
+        End Get
+        Set(value As String)
+            _url = value
+        End Set
+    End Property
+
+    Sub New()
+        Cursor = Cursors.Hand
+        BackColor = ColorTranslator.FromHtml("#212426")
+        ForeColor = ColorTranslator.FromHtml("#00a1ff")
+        Font = New Font("Segoe UI Semibold", 11)
+    End Sub
+
+    Protected Overrides Sub OnMouseDown(e As System.Windows.Forms.MouseEventArgs)
+        MyBase.OnMouseDown(e)
+        If Not _url Is Nothing Then
+            Process.Start(_url)
+        End If
+    End Sub
+End Class

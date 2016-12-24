@@ -1,0 +1,406 @@
+Imports System.Drawing.Drawing2D
+Imports System.ComponentModel
+
+Module ThemeModule
+
+    Friend Const SLOPE As Integer = 4
+
+    Friend g As Graphics
+
+    Friend Enum MouseState
+        None
+        Over
+        Down
+    End Enum
+
+    Public Sub DrawCenteredString(g As Graphics, text As String, font As Font, brush As Brush, rect As Rectangle, Optional xOffset As Integer = 0, Optional yOffset As Integer = 0)
+
+        Dim textSize As SizeF = g.MeasureString(text, font)
+        Dim textX As Integer = rect.X + (rect.Width  2) - (textSize.Width  2) + xOffset
+        Dim textY As Integer = rect.Y + (rect.Height  2) - (textSize.Height  2) + yOffset
+
+        g.DrawString(text, font, brush, textX, textY)
+
+    End Sub
+
+End Module
+
+Class OnlyGroupBox
+    Inherits ContainerControl
+
+    Sub New()
+
+        SetStyle(DirectCast(139286, ControlStyles), True)
+        SetStyle(ControlStyles.Selectable, False)
+
+        Size = New Size(400, 300)
+
+        backBrush = New SolidBrush(Color.FromArgb(0, 70, 90))
+        borderPen = New Pen(Color.FromArgb(90, 135, 140))
+        coverPen = New Pen(Color.FromArgb(0, 70, 90))
+
+    End Sub
+
+    Private backBrush As SolidBrush
+    Private borderPen As Pen
+    Private coverPen As Pen
+
+    Protected Overrides Sub OnPaint(e As PaintEventArgs)
+
+        g = e.Graphics
+        g.Clear(Parent.BackColor)
+        g.SmoothingMode = SmoothingMode.AntiAlias
+
+        g.DrawRectangle(borderPen, New Rectangle(0, 0, Width - 1, Height - 1))
+
+        g.DrawLine(coverPen, New Point(0, Height  8), New Point(0, Height  1.8))
+        g.DrawLine(coverPen, New Point(Width  20, 0), New Point(Width - (Width  8), 0))
+        g.DrawLine(coverPen, New Point(Width - 1, Height  5), New Point(Width - 1, Height  1.25))
+
+
+    End Sub
+
+End Class
+
+Class OnlyButton
+    Inherits Control
+
+    Private state As MouseState
+
+    Private textSize As SizeF
+    Private textX, textY As Integer
+
+    Sub New()
+
+        SetStyle(DirectCast(139286, ControlStyles), True)
+        SetStyle(ControlStyles.Selectable, False)
+
+        Cursor = Cursors.Hand
+        Font = New Font(Font.FontFamily, 10)
+        Size = New Size(120, 30)
+
+        textBrush = New SolidBrush(Color.FromArgb(20, 60, 70))
+        overBrush = New SolidBrush(Color.FromArgb(40, 0, 70, 90))
+        downBrush = New SolidBrush(Color.FromArgb(100, 0, 70, 90))
+
+    End Sub
+
+    Private boundsRect As Rectangle
+
+    Private textBrush As SolidBrush
+    Private overBrush, downBrush As SolidBrush
+
+    Protected Overrides Sub OnPaint(e As PaintEventArgs)
+
+        g = e.Graphics
+        g.SmoothingMode = SmoothingMode.AntiAlias
+
+        boundsRect = New Rectangle(0, 0, Width, Height)
+
+        g.FillRectangle(Brushes.WhiteSmoke, boundsRect)
+
+        If state = MouseState.Over Then
+            g.FillRectangle(overBrush, boundsRect)
+        ElseIf state = MouseState.Down Then
+            g.FillRectangle(downBrush, boundsRect)
+        End If
+
+        DrawCenteredString(g, Text, Font, textBrush, boundsRect, 0, 1)
+
+    End Sub
+
+    Protected Overrides Sub OnMouseEnter(e As EventArgs)
+        state = MouseState.Over
+        Invalidate()
+        MyBase.OnMouseEnter(e)
+    End Sub
+
+    Protected Overrides Sub OnMouseLeave(e As EventArgs)
+        state = MouseState.None
+        Invalidate()
+        MyBase.OnMouseLeave(e)
+    End Sub
+
+    Protected Overrides Sub OnMouseDown(e As MouseEventArgs)
+        state = MouseState.Down
+        Invalidate()
+        MyBase.OnMouseDown(e)
+    End Sub
+
+    Protected Overrides Sub OnMouseUp(e As MouseEventArgs)
+        state = MouseState.Over
+        Invalidate()
+        MyBase.OnMouseUp(e)
+    End Sub
+
+    Protected Overrides Sub OnTextChanged(e As EventArgs)
+        Invalidate()
+        MyBase.OnTextChanged(e)
+    End Sub
+
+End Class
+
+Class OnlyMessageBox
+    Inherits Control
+
+    Sub New()
+
+        SetStyle(DirectCast(139286, ControlStyles), True)
+        SetStyle(ControlStyles.Selectable, False)
+
+        Font = New Font(Font.FontFamily, 10)
+        Size = New Size(400, 44)
+
+        textBrush = New SolidBrush(Color.FromArgb(100, 140, 150))
+
+    End Sub
+
+    Private boundsRect As Rectangle
+
+    Private textBrush As SolidBrush
+
+    Protected Overrides Sub OnPaint(e As PaintEventArgs)
+
+        g = e.Graphics
+        g.Clear(Color.FromArgb(25, 90, 105))
+
+        boundsRect = New Rectangle(0, 0, Width - 1, Height - 1)
+        DrawCenteredString(g, Text, Font, textBrush, boundsRect, 0, 1)
+
+    End Sub
+
+    Protected Overrides Sub OnTextChanged(e As EventArgs)
+        Invalidate()
+        MyBase.OnTextChanged(e)
+    End Sub
+
+End Class
+
+DefaultEvent(TextChanged) Class OnlyTextBox
+    Inherits Control
+
+    Private base As TextBox
+
+    Private _maxLength As Integer
+    Private _readOnly As Boolean
+    Private _useSystemPasswordChar As Boolean
+    Private _image As Image
+
+    Public Property MaxLength() As Integer
+        Get
+            Return _maxLength
+        End Get
+        Set(ByVal value As Integer)
+            _maxLength = value
+            If base IsNot Nothing Then
+                base.MaxLength = value
+            End If
+        End Set
+    End Property
+
+    Public Property [ReadOnly]() As Boolean
+        Get
+            Return _readOnly
+        End Get
+        Set(ByVal value As Boolean)
+            _readOnly = value
+            If base IsNot Nothing Then
+                base.ReadOnly = value
+            End If
+        End Set
+    End Property
+
+    Public Property UseSystemPasswordChar() As Boolean
+        Get
+            Return _useSystemPasswordChar
+        End Get
+        Set(ByVal value As Boolean)
+            _useSystemPasswordChar = value
+            If base IsNot Nothing Then
+                base.UseSystemPasswordChar = value
+            End If
+        End Set
+    End Property
+
+    Public Property Image As Image
+        Get
+            Return _image
+        End Get
+        Set(value As Image)
+            _image = value
+            ApplySizing()
+            Invalidate()
+        End Set
+    End Property
+
+    Public Overrides Property Text() As String
+        Get
+            Return MyBase.Text
+        End Get
+        Set(ByVal value As String)
+            MyBase.Text = value
+            If base IsNot Nothing Then
+                base.Text = value
+            End If
+        End Set
+    End Property
+
+    Public Overrides Property Font() As Font
+        Get
+            Return MyBase.Font
+        End Get
+        Set(ByVal value As Font)
+            MyBase.Font = value
+            If base IsNot Nothing Then
+                base.Font = value
+                base.Location = New Point(3, 5)
+                base.Width = Width - 6
+            End If
+        End Set
+    End Property
+
+    Protected Overrides Sub OnCreateControl()
+        MyBase.OnCreateControl()
+        If Not Controls.Contains(base) Then
+            Controls.Add(base)
+        End If
+    End Sub
+
+    Sub New()
+
+        SetStyle(DirectCast(139286, ControlStyles), True)
+        SetStyle(ControlStyles.Selectable, False)
+
+        Cursor = Cursors.IBeam
+        Font = New Font(Arial, 10)
+
+        MaxLength = 32767
+
+        base = New TextBox
+        base.BackColor = Color.FromArgb(10, 75, 95)
+        base.Font = Font
+        base.Text = Text
+        base.ForeColor = Color.WhiteSmoke
+        base.MaxLength = _maxLength
+        base.ReadOnly = _readOnly
+        base.UseSystemPasswordChar = _useSystemPasswordChar
+        base.BorderStyle = BorderStyle.None
+        base.Location = New Point(10, 8)
+        base.Width = Width - 10
+
+        Height = base.Height + 13
+
+        backBrush = New SolidBrush(Color.FromArgb(10, 75, 95))
+        borderPen = New Pen(Color.FromArgb(70, 120, 135))
+
+        AddHandler base.TextChanged, AddressOf OnBaseTextChanged
+        AddHandler base.KeyDown, AddressOf OnBaseKeyDown
+
+    End Sub
+
+    Private boundsRect As Rectangle
+    Private imageRect As Rectangle
+
+    Private backBrush As SolidBrush
+    Private borderPen As Pen
+
+    Protected Overrides Sub OnPaint(e As PaintEventArgs)
+
+        g = e.Graphics
+        g.Clear(Parent.BackColor)
+        g.SmoothingMode = SmoothingMode.AntiAlias
+
+        boundsRect = New Rectangle(0, 0, Width - 1, Height - 1)
+        g.FillRectangle(backBrush, boundsRect)
+        g.DrawRectangle(borderPen, boundsRect)
+
+        If _image IsNot Nothing Then
+            imageRect = New Rectangle(Width - 27, 6, 20, 20)
+            g.DrawImage(_image, imageRect)
+        End If
+
+    End Sub
+
+    Private Sub OnBaseTextChanged(ByVal s As Object, ByVal e As EventArgs)
+        Text = base.Text
+    End Sub
+
+    Private Sub OnBaseKeyDown(ByVal s As Object, ByVal e As KeyEventArgs)
+        If e.Control AndAlso e.KeyCode = Keys.A Then
+            base.SelectAll()
+            e.SuppressKeyPress = True
+        End If
+    End Sub
+
+    Private Sub ApplySizing()
+        base.Location = New Point(10, 8)
+        If _image IsNot Nothing Then
+            base.Width = Width - 44
+        Else
+            base.Width = Width - 20
+        End If
+        Height = base.Height + 16
+    End Sub
+
+    Protected Overrides Sub OnResize(ByVal e As EventArgs)
+        ApplySizing()
+        MyBase.OnResize(e)
+    End Sub
+
+    Protected Overrides Sub OnMouseDown(ByVal e As System.Windows.Forms.MouseEventArgs)
+        base.SelectionStart = base.TextLength
+        base.Focus()
+        MyBase.OnMouseDown(e)
+    End Sub
+
+End Class
+
+Class OnlyWarningMessage
+    Inherits Control
+
+    Private _image As Image
+
+    Public Property Image As Image
+        Get
+            Return _image
+        End Get
+        Set(value As Image)
+            _image = value
+            Invalidate()
+        End Set
+    End Property
+
+    Sub New()
+
+        SetStyle(DirectCast(139286, ControlStyles), True)
+        SetStyle(ControlStyles.Selectable, False)
+
+        Font = New Font(Font.FontFamily, 9)
+        Size = New Size(140, 26)
+
+    End Sub
+
+    Private imageRect As Rectangle
+    Private boundsRect As Rectangle
+
+    Protected Overrides Sub OnPaint(e As PaintEventArgs)
+
+        g = e.Graphics
+        g.Clear(Parent.BackColor)
+        g.SmoothingMode = SmoothingMode.AntiAlias
+
+        If _image IsNot Nothing Then
+            imageRect = New Rectangle(0, (Height  2) - 10, 20, 20)
+            g.DrawImage(_image, imageRect)
+        End If
+
+        g.DrawString(Text, Font, Brushes.WhiteSmoke, New Point(24, (Height  2) - g.MeasureString(Text, Font).Height  2))
+
+    End Sub
+
+    Protected Overrides Sub OnTextChanged(e As EventArgs)
+        Invalidate()
+        MyBase.OnTextChanged(e)
+    End Sub
+
+End Class

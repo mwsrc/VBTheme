@@ -1,0 +1,549 @@
+Imports System.Drawing.Drawing2D
+Imports System.ComponentModel
+Imports System.Runtime.InteropServices
+
+'-------------------------
+'Theme:          EasyColour
+'Creator:        Euras
+'Version:        1.0
+'Created:        02/08/14
+'Website:        eurashd.com
+'-------------------------
+
+Public Class EC_Theme : Inherits ContainerControl
+
+    <DllImportAttribute("user32.dll")> _
+    Public Shared Function SendMessage(hWnd As IntPtr, Msg As Integer, wParam As Integer, lParam As Integer) As Integer
+    End Function
+    <DllImportAttribute("user32.dll")> _
+    Public Shared Function ReleaseCapture() As Boolean
+    End Function
+    Public Const WM_NCLBUTTONDOWN As Integer = &HA1
+    Public Const HT_CAPTION As Integer = &H2
+
+    Protected NotOverridable Overrides Sub OnHandleCreated(e As EventArgs)
+        MyBase.Dock = DockStyle.Fill
+        ForeColor = Color.White
+        MyBase.OnHandleCreated(e)
+    End Sub
+
+    Private _IsParentForm As Boolean
+
+    Protected Property IsParentForm() As Boolean
+        Get
+            Return _IsParentForm
+        End Get
+        Set(value As Boolean)
+            _IsParentForm = value
+        End Set
+    End Property
+
+    Private _Transparent As Boolean
+    Public Property Transparent() As Boolean
+        Get
+            Return _Transparent
+        End Get
+        Set(value As Boolean)
+            _Transparent = value
+            If Not IsHandleCreated Then
+                Return
+                SetStyle(ControlStyles.Opaque, Not value)
+                SetStyle(ControlStyles.SupportsTransparentBackColor, value)
+                Invalidate()
+            End If
+        End Set
+    End Property
+
+    Protected Overrides Sub OnParentChanged(e As System.EventArgs)
+        MyBase.OnParentChanged(e)
+        If Parent Is Nothing Then
+            Return
+            _IsParentForm = TypeOf Parent Is Form
+        End If
+        If _IsParentForm Then
+            ParentForm.FormBorderStyle = _BorderStyle
+        End If
+    End Sub
+
+    Private _BorderStyle As FormBorderStyle
+    Public Property BorderStyle() As FormBorderStyle
+        Get
+            If _IsParentForm Then
+                Return ParentForm.FormBorderStyle
+            Else
+                Return _BorderStyle
+            End If
+        End Get
+        Set(value As FormBorderStyle)
+            _BorderStyle = value
+            If _IsParentForm Then
+                ParentForm.FormBorderStyle = value
+            End If
+        End Set
+    End Property
+
+    Protected Overrides ReadOnly Property CreateParams As System.Windows.Forms.CreateParams
+        Get
+            Const CS_DROPSHADOW As Integer = &H20000
+            Dim cp As CreateParams = MyBase.CreateParams
+            cp.ClassStyle = cp.ClassStyle Or CS_DROPSHADOW
+            Return cp
+        End Get
+    End Property
+
+    Protected Overrides Sub OnMouseDown(e As System.Windows.Forms.MouseEventArgs)
+        MyBase.OnMouseDown(e)
+        If e.Button = MouseButtons.Left Then
+            ReleaseCapture()
+            SendMessage(Parent.Handle, WM_NCLBUTTONDOWN, HT_CAPTION, 0)
+        End If
+    End Sub
+
+    Protected Overrides Sub OnPaint(e As System.Windows.Forms.PaintEventArgs)
+        MyBase.OnPaint(e)
+        Dim g As Graphics = e.Graphics
+        g.SmoothingMode = Drawing2D.SmoothingMode.HighQuality
+        g.InterpolationMode = Drawing2D.InterpolationMode.HighQualityBicubic
+        g.TextRenderingHint = Drawing.Text.TextRenderingHint.ClearTypeGridFit
+
+        g.FillRectangle(New SolidBrush(Color.FromArgb(75, 0, 0, 0)), New Rectangle(-1, -1, Width + 1, 25))
+        Dim icon As Image = My.Resources.icon
+        Dim iSize As Size = New Size(16, 16)
+        g.DrawImage(icon, 5, 5, 16, 16)
+        g.DrawString(Text, Font, New SolidBrush(ForeColor), New Point(25, 5), StringFormat.GenericDefault)
+        g.Dispose()
+    End Sub
+End Class
+
+Class EC_Button
+    Inherits Control
+    Dim isHover As Boolean
+    Dim _ButtonText As String
+    Dim _Image As Image
+    Dim _ImageSize As Size
+
+    Public Sub New()
+        SetStyle(ControlStyles.SupportsTransparentBackColor, True)
+        BackColor = Color.Transparent
+        Cursor = Cursors.Hand
+    End Sub
+
+    Protected Overrides Sub OnMouseEnter(e As EventArgs)
+        MyBase.OnMouseEnter(e)
+        isHover = True
+        Invalidate()
+    End Sub
+
+    Protected Overrides Sub OnMouseLeave(e As EventArgs)
+        MyBase.OnMouseLeave(e)
+        isHover = False
+        Invalidate()
+    End Sub
+
+    <Category("Appearance")> _
+    Public Overrides Property Text() As String
+        Get
+            Return _ButtonText
+        End Get
+        Set(value As String)
+            _ButtonText = value
+        End Set
+    End Property
+
+    <Category("Appearance")> _
+    Public Property Image() As Image
+        Get
+            Return _Image
+        End Get
+        Set(value As Image)
+            _Image = value
+        End Set
+    End Property
+
+    <Category("Appearance")> _
+    Public Property ImageSize() As Size
+        Get
+            Return _ImageSize
+        End Get
+        Set(value As Size)
+            _ImageSize = value
+        End Set
+    End Property
+
+    Protected Overrides Sub OnPaint(e As PaintEventArgs)
+        MyBase.OnPaint(e)
+        Dim g As Graphics = e.Graphics
+        g.InterpolationMode = InterpolationMode.HighQualityBicubic
+
+        Dim s As SizeF = g.MeasureString(_ButtonText, Font)
+        Dim x As Integer = ClientSize.Width
+        Dim y As Integer = ClientSize.Height
+
+        g.FillRectangle(New SolidBrush(Color.FromArgb(120, 0, 0, 0)), New Rectangle(0, y / 2, x - 1, y - 1))
+        g.FillRectangle(New SolidBrush(Color.FromArgb(80, 0, 0, 0)), New Rectangle(0, 0, x - 1, y / 2))
+
+        If Text Is Nothing Then
+            _ButtonText = Name
+        End If
+
+        g.DrawString(_ButtonText, Font, New SolidBrush(Color.White), (x - s.Width) / 2, (y - s.Height) / 2)
+
+        If _Image IsNot Nothing Then
+            Dim imgX As Integer = _ImageSize.Width
+            Dim imgY As Integer = _ImageSize.Height
+
+            If _ImageSize.IsEmpty Then
+                g.DrawImage(_Image, New Rectangle(5, (y - imgY) / 2, 16, 16))
+            Else
+                g.DrawImage(_Image, New Rectangle(5, (y - imgY) / 2, imgX, imgY))
+            End If
+        End If
+
+        If isHover Then
+            g.FillRectangle(New SolidBrush(Color.FromArgb(25, 0, 0, 0)), New Rectangle(0, 0, x, y))
+        End If
+
+        g.Dispose()
+    End Sub
+End Class
+
+Class EC_CheckBox
+    Inherits Control
+    Private _Checked As Boolean
+
+    Public Sub New()
+        SetStyle(ControlStyles.SupportsTransparentBackColor, True)
+        BackColor = Color.Transparent
+        Size = New Size(20, 20)
+        MaximumSize = Size
+        MinimumSize = Size
+        Cursor = Cursors.Hand
+    End Sub
+
+    Protected Overrides Sub OnMouseClick(e As MouseEventArgs)
+        If _Checked Then
+            _Checked = False
+        ElseIf Not _Checked Then
+            _Checked = True
+        End If
+        Invalidate()
+        MyBase.OnMouseClick(e)
+    End Sub
+
+    Public Property Checked() As Boolean
+        Get
+            Return _Checked
+        End Get
+        Set(value As Boolean)
+            _Checked = value
+        End Set
+    End Property
+
+    Protected Overrides Sub OnPaint(e As PaintEventArgs)
+        MyBase.OnPaint(e)
+        Dim g As Graphics = e.Graphics
+        g.SmoothingMode = SmoothingMode.HighQuality
+        g.InterpolationMode = InterpolationMode.HighQualityBicubic
+        Dim x As Integer = ClientSize.Width
+        Dim y As Integer = ClientSize.Height
+
+        g.FillEllipse(New SolidBrush(Color.FromArgb(25, 0, 0, 0)), New Rectangle(0, 0, x - 1, y - 1))
+        g.FillEllipse(New SolidBrush(Color.FromArgb(75, 255, 255, 255)), New Rectangle(3, 3, x - 7, y - 7))
+
+        If _Checked Then
+            g.FillEllipse(New SolidBrush(Color.FromArgb(100, 0, 0, 0)), New RectangleF(5, 5, (x / 2) - 1, (y / 2) - 1))
+        End If
+
+        g.Dispose()
+    End Sub
+End Class
+
+Class EC_Panel
+    Inherits Panel
+    Public _PanelText As String
+
+    <Category("Appearance")> _
+    Public Property PanelText() As String
+        Get
+            Return _PanelText
+        End Get
+        Set(value As String)
+            _PanelText = value
+        End Set
+    End Property
+
+    Protected Overrides Sub OnPaint(e As PaintEventArgs)
+        MyBase.OnPaint(e)
+        Dim g As Graphics = e.Graphics
+        g.SmoothingMode = SmoothingMode.HighQuality
+        g.InterpolationMode = InterpolationMode.HighQualityBicubic
+        g.TextRenderingHint = Drawing.Text.TextRenderingHint.ClearTypeGridFit
+        Dim x As Integer = ClientSize.Width
+        Dim y As Integer = ClientSize.Height
+
+        g.FillRectangle(New SolidBrush(Color.FromArgb(25, 0, 0, 0)), New Rectangle(0, 0, x, 25))
+
+        If PanelText Is Nothing Then
+            _PanelText = Name
+        End If
+
+        g.FillRectangle(New SolidBrush(Color.FromArgb(50, 0, 0, 0)), New Rectangle(0, 0, x, y))
+        g.DrawString(_PanelText, Font, New SolidBrush(Color.White), New Point(5, 5))
+
+        g.Dispose()
+    End Sub
+End Class
+
+Class EC_Tabs
+    Inherits TabControl
+    ' Initialize
+    Public Sub New()
+        DrawMode = TabDrawMode.OwnerDrawFixed
+        SetStyle(ControlStyles.AllPaintingInWmPaint Or ControlStyles.DoubleBuffer Or ControlStyles.ResizeRedraw Or ControlStyles.UserPaint, True)
+        DoubleBuffered = True
+        Dock = DockStyle.Bottom
+        SizeMode = TabSizeMode.Normal
+        ItemSize = New Size(100, 20)
+    End Sub
+
+    ' Tabs Back Color Property
+    Private m_Backcolor As Color = Color.Empty
+    <Browsable(True)> _
+    Public Overrides Property BackColor() As Color
+        Get
+            If m_Backcolor.Equals(Color.Empty) Then
+                If Parent Is Nothing Then
+                    Return Control.DefaultBackColor
+                Else
+                    Return Parent.BackColor
+                End If
+            End If
+            Return m_Backcolor
+        End Get
+        Set(value As Color)
+            If m_Backcolor.Equals(value) Then
+                Return
+            End If
+            m_Backcolor = value
+            Invalidate()
+            MyBase.OnBackColorChanged(EventArgs.Empty)
+        End Set
+    End Property
+
+    Public Function ShouldSerializeBackColor() As Boolean
+        Return Not m_Backcolor.Equals(Color.Empty)
+    End Function
+
+    Public Overrides Sub ResetBackColor()
+        m_Backcolor = Color.Empty
+        Invalidate()
+    End Sub
+
+    Protected Overrides Sub OnPaint(e As PaintEventArgs)
+        MyBase.OnPaint(e)
+        Dim g As Graphics = e.Graphics
+        g.Clear(BackColor)
+
+        g.SmoothingMode = SmoothingMode.HighQuality
+        g.InterpolationMode = InterpolationMode.HighQualityBicubic
+
+        ' Apply Colouring To Each Tab Page
+        For i As Integer = 0 To TabPages.Count - 1
+            Dim rect As Rectangle = GetTabRect(i)
+            Dim r As New Rectangle(GetTabRect(i).X + 10, GetTabRect(i).Y + 3, 100, 20)
+            If SelectedTab Is TabPages(i) Then
+                g.FillRectangle(New SolidBrush(Color.FromArgb(75, 0, 0, 0)), rect)
+            Else
+                g.FillRectangle(New SolidBrush(Color.FromArgb(25, 0, 0, 0)), rect)
+            End If
+
+            ' Draw Tab Page Text
+            g.DrawString(TabPages(i).Text, Font, New SolidBrush(Color.White), DirectCast(r, Rectangle))
+            TabPages(i).UseVisualStyleBackColor = False
+        Next
+    End Sub
+End Class
+
+Class EC_Notification
+    Inherits UserControl
+    Private _Text As String
+
+    ' Initialize
+    Public Sub New()
+        SetStyle(ControlStyles.OptimizedDoubleBuffer Or ControlStyles.AllPaintingInWmPaint Or ControlStyles.UserPaint, True)
+        DoubleBuffered = True
+        BackColor = Color.Transparent
+        Size = New Size(200, 25)
+    End Sub
+
+    ' Notification Property
+    <Category("Appearance")> _
+    Public Property Notification() As String
+        Get
+            Return _Text
+        End Get
+        Set(value As String)
+            _Text = value
+        End Set
+    End Property
+
+    Protected Overrides Sub OnPaint(e As PaintEventArgs)
+        MyBase.OnPaint(e)
+        Dim g As Graphics = e.Graphics
+
+        Dim s As SizeF = g.MeasureString(_Text, Font)
+        g.SmoothingMode = SmoothingMode.HighQuality
+        g.InterpolationMode = InterpolationMode.HighQualityBicubic
+        Dim x As Integer = ClientSize.Width
+        Dim y As Integer = ClientSize.Height
+
+        ' Notification Shadow
+        g.FillRectangle(New SolidBrush(Color.FromArgb(35, Color.Black)), New Rectangle(5, 5, x, y))
+        ' Notification Fill
+        g.FillRectangle(New SolidBrush(Color.White), New Rectangle(0, 0, x - 5, y - 5))
+        ' Notification Text
+        g.DrawString(_Text, Font, New SolidBrush(Color.Black), New PointF(5, ((y - 5) - s.Height) / 2))
+    End Sub
+End Class
+
+Class EC_ProgressBar
+    Inherits Control
+    Private m_max As Integer = 100
+    Private m_min As Integer = 0
+    Private val As Integer = 0
+
+    ' Initialize
+    Public Sub New()
+        MyBase.Size = New Size(150, 15)
+        SetStyle(ControlStyles.AllPaintingInWmPaint Or ControlStyles.ResizeRedraw Or ControlStyles.DoubleBuffer Or ControlStyles.SupportsTransparentBackColor, True)
+        BackColor = Color.FromArgb(25, 0, 0, 0)
+        ForeColor = Color.FromArgb(200, 255, 255, 255)
+    End Sub
+
+    ' Progress Bar Minimum Value
+    Public Property Min() As Integer
+        Get
+            Return m_min
+        End Get
+        Set(value As Integer)
+            If value < 0 Then
+                m_min = 0
+            End If
+            If value > m_max Then
+                m_min = value
+                m_min = value
+            End If
+            If value < m_min Then
+                value = m_min
+            End If
+            Invalidate()
+        End Set
+    End Property
+
+    ' Progress Bar Maximum Value
+    Public Property Max() As Integer
+        Get
+            Return m_max
+        End Get
+        Set(value As Integer)
+            If value < m_min Then
+                m_min = value
+            End If
+            m_max = value
+            If value > m_max Then
+                value = m_max
+            End If
+            Invalidate()
+        End Set
+    End Property
+
+    ' Progress Bar Current Value
+    Public Property Value() As Integer
+        Get
+            Return val
+        End Get
+        Set(value As Integer)
+            Dim oldValue As Integer = val
+            If value < m_min Then
+                val = m_min
+            ElseIf value > m_max Then
+                val = m_max
+            Else
+                val = value
+            End If
+
+            Dim percent As Single
+
+            Dim newValueRect As New Rectangle(ClientRectangle.X + 2, ClientRectangle.Y + 2, ClientRectangle.Width - 4, ClientRectangle.Height - 4)
+            Dim oldValueRect As New Rectangle(ClientRectangle.X + 2, ClientRectangle.Y + 2, ClientRectangle.Width - 4, ClientRectangle.Height - 4)
+
+            percent = CSng(val - m_min) / CSng(m_max - m_min)
+            newValueRect.Width = CInt(CSng(newValueRect.Width) * percent)
+
+            percent = CSng(oldValue - m_min) / CSng(m_max - m_min)
+            oldValueRect.Width = CInt(CSng(oldValueRect.Width) * percent)
+
+            Dim updateRect As New Rectangle()
+
+            If newValueRect.Width > oldValueRect.Width Then
+                updateRect.X = oldValueRect.Size.Width
+                updateRect.Width = newValueRect.Width - oldValueRect.Width
+            Else
+                updateRect.X = newValueRect.Size.Width
+                updateRect.Width = oldValueRect.Width - newValueRect.Width
+            End If
+
+            updateRect.Height = Height
+            Invalidate(updateRect)
+        End Set
+    End Property
+
+    Protected Overrides Sub OnPaintBackground(pevent As PaintEventArgs)
+        MyBase.OnPaintBackground(pevent)
+        Dim g As Graphics = pevent.Graphics
+        ' Progress Bar Background Colour
+        g.FillRectangle(New SolidBrush(BackColor), New Rectangle(0, 0, Width, Height))
+    End Sub
+
+    Protected Overrides Sub OnPaint(e As PaintEventArgs)
+        MyBase.OnPaint(e)
+        Dim g As Graphics = e.Graphics
+        Dim brush As New SolidBrush(ForeColor)
+        Dim percent As Single = CSng(val - m_min) / CSng(m_max - m_min)
+        Dim rect As New Rectangle(2, 2, Width - 4, Height - 4)
+        rect.Width = CInt(CSng(rect.Width) * percent)
+
+        ' Progress Bar ForeColour
+        g.FillRectangle(brush, rect)
+    End Sub
+End Class
+
+Class EC_TextBox
+    Inherits RichTextBox
+
+    Public Sub New()
+        BorderStyle = BorderStyle.None
+        Multiline = False
+        Size = New Size(Size.Width, 20)
+        MaximumSize = New Size(Integer.MaxValue, Size.Height)
+        MinimumSize = Size
+    End Sub
+
+    ' PREVENT FLICKERING
+    Protected Overrides Sub OnPaintBackground(pevent As PaintEventArgs)
+        MyBase.OnPaintBackground(pevent)
+    End Sub
+
+    Private Const WM_PAINT As Integer = 15
+    Protected Overrides Sub WndProc(ByRef m As Message)
+        If m.Msg = WM_PAINT Then
+            Invalidate()
+            MyBase.WndProc(m)
+            Using g As Graphics = Graphics.FromHwnd(Handle)
+                g.InterpolationMode = InterpolationMode.HighQualityBicubic
+            End Using
+        Else
+            MyBase.WndProc(m)
+        End If
+    End Sub
+End Class

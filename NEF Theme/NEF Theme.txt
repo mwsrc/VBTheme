@@ -1,0 +1,817 @@
+Imports System.Drawing.Drawing2D
+'|===========================================================|
+'|===|  NEFantasy
+'| Creator: LordPankake
+'| HF Account: http://www.hackforums.net/member.php?action=profile&uid=1828119
+'| Created: 9/20/2014, Last edited: 9/24/2014
+'|===========================================================|
+#Region "Base Classes"
+Public Class ThemedControl : Inherits Control
+    Public D As New DrawUtils
+    Public State As MouseState = MouseState.None
+    Public Pal As Palette
+    Protected Overrides Sub OnPaintBackground(ByVal e As System.Windows.Forms.PaintEventArgs)
+    End Sub
+    Protected Overrides Sub OnMouseEnter(ByVal e As EventArgs)
+        MyBase.OnMouseEnter(e)
+        State = MouseState.Over
+        Invalidate()
+    End Sub
+    Protected Overrides Sub OnMouseDown(ByVal e As System.Windows.Forms.MouseEventArgs)
+        MyBase.OnMouseDown(e)
+        State = MouseState.Down
+        Invalidate()
+    End Sub
+    Protected Overrides Sub OnMouseLeave(ByVal e As EventArgs)
+        MyBase.OnMouseLeave(e)
+        State = MouseState.None
+        Invalidate()
+    End Sub
+    Protected Overrides Sub OnMouseUp(ByVal e As System.Windows.Forms.MouseEventArgs)
+        MyBase.OnMouseUp(e)
+        State = MouseState.Over
+        Invalidate()
+    End Sub
+    Protected Overrides Sub OnTextChanged(ByVal e As System.EventArgs)
+        MyBase.OnTextChanged(e)
+        Invalidate()
+    End Sub
+    Sub New()
+        MyBase.New()
+        MinimumSize = New Size(20, 20)
+        ForeColor = Color.FromArgb(146, 149, 152)
+        Font = New Font("Segoe UI", 10.0F)
+        DoubleBuffered = True
+        Pal = New Palette
+        Pal.ColHighest = Color.FromArgb(100, 110, 120)
+        Pal.ColHigh = Color.FromArgb(65, 70, 75)
+        Pal.ColMed = Color.FromArgb(40, 42, 45)
+        Pal.ColDim = Color.FromArgb(30, 32, 35)
+        Pal.ColDark = Color.FromArgb(15, 17, 19)
+        BackColor = Pal.ColDim
+    End Sub
+End Class
+Public Class ThemedTextbox : Inherits TextBox
+    Public D As New DrawUtils
+    Public State As MouseState = MouseState.None
+    Public Pal As Palette
+    Protected Overrides Sub OnPaintBackground(ByVal e As System.Windows.Forms.PaintEventArgs)
+    End Sub
+    Protected Overrides Sub OnMouseEnter(ByVal e As EventArgs)
+        MyBase.OnMouseEnter(e)
+        State = MouseState.Over
+        Invalidate()
+    End Sub
+    Protected Overrides Sub OnMouseDown(ByVal e As System.Windows.Forms.MouseEventArgs)
+        MyBase.OnMouseDown(e)
+        State = MouseState.Down
+        Invalidate()
+    End Sub
+    Protected Overrides Sub OnMouseLeave(ByVal e As EventArgs)
+        MyBase.OnMouseLeave(e)
+        State = MouseState.None
+        Invalidate()
+    End Sub
+    Protected Overrides Sub OnMouseUp(ByVal e As System.Windows.Forms.MouseEventArgs)
+        MyBase.OnMouseUp(e)
+        State = MouseState.Over
+        Invalidate()
+    End Sub
+    Protected Overrides Sub OnTextChanged(ByVal e As System.EventArgs)
+        MyBase.OnTextChanged(e)
+        Invalidate()
+    End Sub
+    Sub New()
+        MyBase.New()
+        MinimumSize = New Size(20, 20)
+        ForeColor = Color.FromArgb(146, 149, 152)
+        Font = New Font("Segoe UI", 10.0F)
+        DoubleBuffered = True
+        Pal = New Palette
+        Pal.ColHighest = Color.FromArgb(100, 110, 120)
+        Pal.ColHigh = Color.FromArgb(65, 70, 75)
+        Pal.ColMed = Color.FromArgb(40, 42, 45)
+        Pal.ColDim = Color.FromArgb(30, 32, 35)
+        Pal.ColDark = Color.FromArgb(15, 17, 19)
+        BackColor = Pal.ColDim
+    End Sub
+End Class
+Public Class ThemedContainer : Inherits ContainerControl
+    Public D As New DrawUtils
+    Public Property Sizable As Boolean = True
+    Protected Drag As Boolean = True
+    Public State As MouseState = MouseState.None
+    Protected TopCap As Boolean = False
+    Protected SizeCap As Boolean = False
+    Public Pal As Palette
+    Protected MouseP As Point = New Point(0, 0)
+    Protected TopGrip As Integer
+    Protected Overrides Sub OnPaintBackground(ByVal e As System.Windows.Forms.PaintEventArgs)
+    End Sub
+    Protected Overrides Sub OnMouseEnter(ByVal e As EventArgs)
+        MyBase.OnMouseEnter(e)
+        State = MouseState.Over
+        Invalidate()
+    End Sub
+    Protected Overrides Sub OnMouseDown(ByVal e As System.Windows.Forms.MouseEventArgs)
+        MyBase.OnMouseDown(e)
+        State = MouseState.Down
+        If e.Button = Windows.Forms.MouseButtons.Left Then
+            If New Rectangle(0, 0, Width, TopGrip).Contains(e.Location) Then
+                TopCap = True : MouseP = e.Location
+            ElseIf Drag And New Rectangle(Width - 15, Height - 15, 15, 15).Contains(e.Location) Then
+                SizeCap = True : MouseP = e.Location
+            End If
+        End If
+    End Sub
+    Protected Overrides Sub OnMouseLeave(ByVal e As EventArgs)
+        MyBase.OnMouseLeave(e)
+        State = MouseState.None
+        Invalidate()
+    End Sub
+    Protected Overrides Sub OnMouseUp(ByVal e As System.Windows.Forms.MouseEventArgs)
+        MyBase.OnMouseUp(e)
+        State = MouseState.Over
+        TopCap = False
+        If Drag Then
+            SizeCap = False
+        End If
+
+    End Sub
+    Protected Overrides Sub OnMouseMove(ByVal e As System.Windows.Forms.MouseEventArgs)
+        MyBase.OnMouseMove(e)
+
+        If TopCap Then
+            Parent.Location = MousePosition - MouseP
+        End If
+        If Sizable And Drag And SizeCap Then
+            MouseP = e.Location
+            Parent.Size = New Size(MouseP)
+            Invalidate()
+        End If
+
+    End Sub
+    Protected Overrides Sub OnTextChanged(ByVal e As System.EventArgs)
+        MyBase.OnTextChanged(e)
+        Invalidate()
+    End Sub
+    Sub New()
+        MyBase.New()
+        MinimumSize = New Size(20, 20)
+        ForeColor = Color.FromArgb(146, 149, 152)
+        Font = New Font("Trebuchet MS", 10.0F)
+        DoubleBuffered = True
+        Pal = New Palette
+        Pal.ColHighest = Color.FromArgb(100, 110, 120)
+        Pal.ColHigh = Color.FromArgb(65, 70, 75)
+        Pal.ColMed = Color.FromArgb(40, 42, 45)
+        Pal.ColDim = Color.FromArgb(30, 32, 35)
+        Pal.ColDark = Color.FromArgb(5, 8, 10)
+        BackColor = Pal.ColDim
+    End Sub
+End Class
+Public Class ThemedTabControl : Inherits TabControl
+    Public D As New DrawUtils
+    Public State As MouseState = MouseState.None
+    Public Pal As Palette
+    Protected Overrides Sub OnPaintBackground(ByVal e As System.Windows.Forms.PaintEventArgs)
+    End Sub
+    Protected Overrides Sub OnMouseEnter(ByVal e As EventArgs)
+        MyBase.OnMouseEnter(e)
+        State = MouseState.Over
+        Invalidate()
+    End Sub
+    Protected Overrides Sub OnMouseDown(ByVal e As System.Windows.Forms.MouseEventArgs)
+        MyBase.OnMouseDown(e)
+        State = MouseState.Down
+        Invalidate()
+    End Sub
+    Protected Overrides Sub OnMouseLeave(ByVal e As EventArgs)
+        MyBase.OnMouseLeave(e)
+        State = MouseState.None
+        Invalidate()
+    End Sub
+    Protected Overrides Sub OnMouseUp(ByVal e As System.Windows.Forms.MouseEventArgs)
+        MyBase.OnMouseUp(e)
+        State = MouseState.Over
+        Invalidate()
+    End Sub
+    Protected Overrides Sub OnTextChanged(ByVal e As System.EventArgs)
+        MyBase.OnTextChanged(e)
+        Invalidate()
+    End Sub
+    Sub New()
+        MyBase.New()
+        MinimumSize = New Size(20, 20)
+        ForeColor = Color.FromArgb(146, 149, 152)
+        Font = New Font("Segoe UI", 10.0F)
+        DoubleBuffered = True
+        Pal = New Palette
+        Pal.ColHighest = Color.FromArgb(100, 110, 120)
+        Pal.ColHigh = Color.FromArgb(65, 70, 75)
+        Pal.ColMed = Color.FromArgb(40, 42, 45)
+        Pal.ColDim = Color.FromArgb(30, 32, 35)
+        Pal.ColDark = Color.FromArgb(15, 17, 19)
+        BackColor = Pal.ColDim
+        Alignment = TabAlignment.Top
+        SetStyle(ControlStyles.AllPaintingInWmPaint Or ControlStyles.ResizeRedraw Or ControlStyles.UserPaint Or ControlStyles.DoubleBuffer, True)
+    End Sub
+End Class
+Public Class ThemedListControl : Inherits listbox
+    Public D As New DrawUtils
+    Public State As MouseState = MouseState.None
+    Public Pal As Palette
+    Protected Overrides Sub OnPaintBackground(ByVal e As System.Windows.Forms.PaintEventArgs)
+    End Sub
+    Protected Overrides Sub OnMouseEnter(ByVal e As EventArgs)
+        MyBase.OnMouseEnter(e)
+        State = MouseState.Over
+        Invalidate()
+    End Sub
+    Protected Overrides Sub OnMouseDown(ByVal e As System.Windows.Forms.MouseEventArgs)
+        MyBase.OnMouseDown(e)
+        State = MouseState.Down
+        Invalidate()
+    End Sub
+    Protected Overrides Sub OnMouseLeave(ByVal e As EventArgs)
+        MyBase.OnMouseLeave(e)
+        State = MouseState.None
+        Invalidate()
+    End Sub
+    Protected Overrides Sub OnMouseUp(ByVal e As System.Windows.Forms.MouseEventArgs)
+        MyBase.OnMouseUp(e)
+        State = MouseState.Over
+        Invalidate()
+    End Sub
+    Protected Overrides Sub OnTextChanged(ByVal e As System.EventArgs)
+        MyBase.OnTextChanged(e)
+        Invalidate()
+    End Sub
+    Sub New()
+        MyBase.New()
+        MinimumSize = New Size(20, 20)
+        ForeColor = Color.FromArgb(146, 149, 152)
+        Font = New Font("Segoe UI", 10.0F)
+        DoubleBuffered = True
+        Pal = New Palette
+        Pal.ColHighest = Color.FromArgb(100, 110, 120)
+        Pal.ColHigh = Color.FromArgb(65, 70, 75)
+        Pal.ColMed = Color.FromArgb(40, 42, 45)
+        Pal.ColDim = Color.FromArgb(30, 32, 35)
+        Pal.ColDark = Color.FromArgb(15, 17, 19)
+        BackColor = Pal.ColDim
+    End Sub
+End Class
+#End Region
+
+#Region "Theme"
+Public Class NEFForm : Inherits ThemedContainer
+    Public Property TextAlignment As HorizontalAlignment = HorizontalAlignment.Center
+    Public Property TopSize As Integer = 57
+    Public Property TextYOffset As Integer = 0
+    Sub New()
+        MyBase.New()
+        MinimumSize = New Size(305, 150)
+        Dock = DockStyle.Fill
+        TopGrip = 57
+        TopSize = TopGrip
+        Font = New Font("Segoe UI", 10.0F)
+        BackColor = Color.FromArgb(21, 23, 25)
+        ForeColor = Color.FromArgb(160, Color.White)
+    End Sub
+    Protected Overrides Sub OnPaint(ByVal e As System.Windows.Forms.PaintEventArgs)
+        Dim G As Graphics = e.Graphics
+        MyBase.OnPaint(e)
+        Try
+            Me.ParentForm.TransparencyKey = Color.Fuchsia
+            Me.ParentForm.MinimumSize = MinimumSize
+            If Not Me.ParentForm.FormBorderStyle = FormBorderStyle.None Then
+                Me.ParentForm.FormBorderStyle = FormBorderStyle.None
+            End If
+        Catch ex As Exception : End Try
+        G.Clear(Me.ParentForm.TransparencyKey)
+
+        '| Drawing the main rectangle base.
+        Dim MainRect As New Rectangle(0, 0, Width - 1, Height - 1)
+        Dim MainHighlightRect As New Rectangle(1, 1, Width - 3, Height - 3)
+        Dim BGTextureBrush As New TextureBrush(D.CodeToImage(D.BGTexture), WrapMode.TileFlipXY)
+        G.FillRectangle(BGTextureBrush, MainRect)
+        G.DrawRectangle(New Pen(Color.FromArgb(40, Pal.ColHighest)), MainHighlightRect)
+        G.DrawRectangle(Pens.Black, MainRect)
+
+        '| Detail to the main rect's top grip
+        Dim ShineRect As New Rectangle(0, 0, Width, TopSize / 2)
+        G.FillRectangle(New SolidBrush(Color.FromArgb(40, Pal.ColMed)), ShineRect)
+        Dim SubShineLGB1 As New LinearGradientBrush(ShineRect, Color.Black, Color.Black, 0, False)
+        Dim SubShineLGB2 As New LinearGradientBrush(ShineRect, Color.Black, Color.Black, 0, False)
+        Dim Blend As New ColorBlend()
+        Blend.Positions = {0, 1 / 3, 2 / 3, 1} : Blend.Colors = {Color.FromArgb(50, Color.Black), Color.FromArgb(150, Color.Black), Color.FromArgb(50, Color.Black), Color.Transparent}
+        SubShineLGB1.InterpolationColors = Blend : SubShineLGB1.RotateTransform(45)
+        Blend.Colors = {Color.FromArgb(50, Pal.ColHighest), Color.FromArgb(150, Pal.ColHighest), Color.FromArgb(50, Pal.ColHighest), Color.Transparent}
+        SubShineLGB2.InterpolationColors = Blend : SubShineLGB2.RotateTransform(45)
+        '|
+        D.FillGradientBeam(G, Color.Transparent, Color.FromArgb(80, Pal.ColHighest), ShineRect, GradientAlignment.Vertical)
+        G.DrawLine(New Pen(SubShineLGB1), New Point(1, ShineRect.Height), New Point(Width - 2, ShineRect.Height))
+        G.DrawLine(New Pen(SubShineLGB2), New Point(1, ShineRect.Height + 1), New Point(Width - 2, ShineRect.Height + 1))
+
+        '| Goind back through and making the rect below the detail darker
+        Dim DarkRect As New Rectangle(0, ShineRect.Height, Width - 1, Height - 1 - ShineRect.Height)
+        Dim DarkLGB As New LinearGradientBrush(DarkRect, Color.FromArgb(20, Color.Black), Color.FromArgb(100, Color.Black), 90S)
+        G.FillRectangle(DarkLGB, DarkRect)
+
+        '| The title text / logo. Uncomment whichever you like. In order to change the logo, change the Base64 string down in Drawing utils.
+        'Dim Logo As Bitmap = D.CodeToImage(D.LogoTexture)
+        'G.DrawImage(Logo, New Point((Width / 2) - (Logo.Width / 1.52), 0))
+        D.DrawTextWithShadow(G, New Rectangle(0, 0, Width, TopSize + TextYOffset), Text, Font, TextAlignment, ForeColor, Color.Black)
+
+        '| The inner and slightly brigher rectangle of the form
+        Dim InnerRect As New Rectangle(5, TopSize, Width - 11, Height - 6 - TopSize)
+        Dim InnerHighlightRect As New Rectangle(6, TopSize + 1, Width - 13, Height - 8 - TopSize)
+        G.FillRectangle(BGTextureBrush, InnerRect)
+        G.FillRectangle(New SolidBrush(Color.FromArgb(45, Pal.ColHigh)), InnerRect)
+        G.DrawRectangle(New Pen(Color.FromArgb(40, Pal.ColHighest)), InnerHighlightRect)
+        G.DrawRectangle(Pens.Black, InnerRect)
+    End Sub
+End Class
+Public Class NEFButton : Inherits ThemedControl
+    Public Property OverlayCol As Color = Nothing
+    Public Property DrawSeparator As Boolean = False
+    Sub New()
+        MyBase.New()
+        Font = New Font("Segoe UI", 11.0F)
+    End Sub
+    Protected Overrides Sub OnPaint(ByVal e As System.Windows.Forms.PaintEventArgs)
+        Dim G As Graphics = e.Graphics
+        MyBase.OnPaint(e)
+        G.Clear(Me.BackColor)
+
+        '| Drawing the main rectangle base.
+        Dim MainRect As New Rectangle(0, 0, Width - 1, Height - 1)
+        Dim MainHighlightRect As New Rectangle(1, 1, Width - 3, Height - 3)
+        Dim BGTextureBrush As New TextureBrush(D.CodeToImage(D.BGTexture), WrapMode.TileFlipXY)
+        G.FillRectangle(BGTextureBrush, MainRect)
+
+        If OverlayCol <> Nothing Then
+            G.FillRectangle(New SolidBrush(OverlayCol), MainRect)
+        End If
+
+
+        '| Detail to the main rect's top & bottom gradients
+        Dim GradientHeight = Height / 2
+        Dim ShineRect As New Rectangle(0, 0, Width, GradientHeight)
+        Dim ShineRect2 As New Rectangle(0, GradientHeight, Width, GradientHeight)
+        G.FillRectangle(New SolidBrush(Color.FromArgb(40, Pal.ColMed)), ShineRect)
+        D.FillGradientBeam(G, Color.Transparent, Color.FromArgb(60, Pal.ColHighest), ShineRect, GradientAlignment.Vertical)
+        D.FillGradientBeam(G, Color.Transparent, Color.FromArgb(30, Pal.ColHighest), ShineRect2, GradientAlignment.Vertical)
+        If DrawSeparator Then
+            G.DrawLine(New Pen(Color.FromArgb(50, Color.Black)), New Point(1, ShineRect.Height), New Point(Width - 2, ShineRect.Height))
+            G.DrawLine(New Pen(Color.FromArgb(35, Pal.ColHighest)), New Point(1, ShineRect.Height + 1), New Point(Width - 2, ShineRect.Height + 1))
+            G.DrawLine(New Pen(Color.FromArgb(50, Color.Black)), New Point(1, ShineRect.Height + 2), New Point(Width - 2, ShineRect.Height + 2))
+        End If
+   
+        '| Goind back through and making the rect below the detail darker
+        Dim DarkLGB As New LinearGradientBrush(MainRect, Color.FromArgb(20, Color.Black), Color.FromArgb(100, Color.Black), 90S)
+        G.FillRectangle(DarkLGB, MainRect)
+
+        Select Case State
+            Case MouseState.Over
+                G.FillRectangle(New SolidBrush(Color.FromArgb(30, Pal.ColHighest)), MainRect)
+            Case MouseState.Down
+                G.FillRectangle(New SolidBrush(Color.FromArgb(56, Color.Black)), MainRect)
+        End Select
+
+        G.DrawRectangle(New Pen(Color.FromArgb(40, Pal.ColHighest)), MainHighlightRect)
+        G.DrawRectangle(Pens.Black, MainRect)
+        D.DrawTextWithShadow(G, New Rectangle(0, 0, Width, Height), Text, Font, HorizontalAlignment.Center, Color.FromArgb(155, 155, 160), Color.Black)
+    End Sub
+End Class
+Public Class NEFProgressBar : Inherits ThemedControl
+    '| The original user who asked for the theme wanted Vibelander's prog bar. 
+    '| So credits to UnReLaTeD for the basic progress bar design!
+    Private PValue As Integer = 50
+    Public Property Value() As Integer
+        Get
+            Return PValue
+        End Get
+        Set(ByVal value As Integer)
+            PValue = value
+            Invalidate()
+        End Set
+    End Property
+    Public Property Minimum As Integer = 0
+    Public Property Maximum As Integer = 100
+    Sub New()
+        MyBase.New()
+        Font = New Font("Segoe UI", 11.0F)
+    End Sub
+    Protected Overrides Sub OnPaint(ByVal e As System.Windows.Forms.PaintEventArgs)
+        Dim G As Graphics = e.Graphics
+        MyBase.OnPaint(e)
+        G.Clear(Me.BackColor)
+        Height = 24
+
+        Dim BarRect As New Rectangle(2, 2, ValueToPercentage(PValue) * Width - 5, Height - 5)
+        Dim Val As Integer = ValueToPercentage(PValue) * Width - 5
+
+        '| Drawing the main BG (because VB won't do transperency)
+        Dim MainRect As New Rectangle(0, 0, Width, Height)
+        Dim MainRectHighlight As Rectangle = New Rectangle(1, 1, Width - 3, Height - 4)
+        Dim MainRectBorderFill As Rectangle = New Rectangle(0, 0, Width - 1, Height - 1)
+        Dim MainRectBorderDraw As Rectangle = New Rectangle(0, 0, Width - 1, Height - 2)
+        Dim BGTextureBrush As New TextureBrush(D.CodeToImage(D.BGTexture), WrapMode.TileFlipXY)
+        G.FillRectangle(BGTextureBrush, MainRect)
+        G.FillRectangle(New SolidBrush(Color.FromArgb(45, Pal.ColHigh)), MainRect)
+        G.DrawRectangle(New Pen(Color.FromArgb(25, Color.WhiteSmoke)), MainRectHighlight)
+        G.DrawRectangle(New Pen(Color.FromArgb(200, Color.Black)), MainRectBorderDraw)
+        G.FillRectangle(New SolidBrush(Color.FromArgb(75, Color.Black)), MainRectBorderFill)
+
+        '| The progress bar
+        Dim ProgressLGB As New LinearGradientBrush(ClientRectangle, Color.FromArgb(100, 51, 159, 231), Color.FromArgb(33, 128, 206), LinearGradientMode.Vertical)
+        Dim ProgressPath As Rectangle = New Rectangle(1, 1, Val + 2, Height - 4)
+        Dim ProgressPathSmall As Rectangle = New Rectangle(3, 3, Val, Height / 2 - 3)
+        If Val > 1 Then
+            Dim BlueTextureBrush As New TextureBrush(D.CodeToImage(D.BlueTexture), WrapMode.TileFlipXY)
+            G.FillRectangle(BlueTextureBrush, ProgressPath)
+            G.FillRectangle(ProgressLGB, ProgressPath)
+        End If
+        If Val > 1 Then
+            G.DrawLine(New Pen(Color.FromArgb(130, 131, 197, 241)), New Point(4, 3), New Point(Val, 3))
+            D.FillGradientBeam(G, Color.Transparent, Color.FromArgb(60, Color.White), New Rectangle(3, 3, Val, Height / 2 - 3), GradientAlignment.Vertical)
+            G.DrawRectangle(New Pen(Color.FromArgb(12, 33, 55), 1), New Rectangle(1, 1, Val + 2, Height - 4))
+        End If
+    End Sub
+    Private Function ValueToPercentage(val As Integer) As Single
+        Dim min = Minimum
+        Dim max = Maximum
+        Return (val - min) / (max - min)
+    End Function
+End Class
+Public Class NEFLabel : Inherits ThemedControl
+    Sub New()
+        MyBase.New()
+        Font = New Font("Segoe UI", 10.0F)
+    End Sub
+    Protected Overrides Sub OnPaint(ByVal e As System.Windows.Forms.PaintEventArgs)
+        Dim G As Graphics = e.Graphics
+        MyBase.OnPaint(e)
+        G.Clear(Me.BackColor)
+        Height = 20
+
+        '| Drawing the main BG (because VB won't do transperency)
+        Dim MainRect As New Rectangle(0, 0, Width, Height)
+        Dim BGTextureBrush As New TextureBrush(D.CodeToImage(D.BGTexture), WrapMode.TileFlipXY)
+        G.FillRectangle(BGTextureBrush, MainRect)
+        G.FillRectangle(New SolidBrush(Color.FromArgb(45, Pal.ColHigh)), MainRect)
+        D.DrawTextWithShadow(G, New Rectangle(0, 0, Width, Height), Text, Font, HorizontalAlignment.Left, Color.FromArgb(155, 155, 160), Color.Black)
+    End Sub
+End Class
+Public Class NEFImage : Inherits ThemedControl
+    Public Property Image As Bitmap
+    Public Property ImageMode As ImageMode = ImageMode.Normal
+    Sub New()
+        MyBase.New()
+        Font = New Font("Segoe UI", 10.0F)
+    End Sub
+    Protected Overrides Sub OnPaint(ByVal e As System.Windows.Forms.PaintEventArgs)
+        Dim G As Graphics = e.Graphics
+        MyBase.OnPaint(e)
+        G.Clear(Me.BackColor)
+
+        '| Drawing the main BG (because VB won't do transperency)
+        Dim MainRect As New Rectangle(0, 0, Width, Height)
+        Dim BGTextureBrush As New TextureBrush(D.CodeToImage(D.BGTexture), WrapMode.TileFlipXY)
+        G.FillRectangle(BGTextureBrush, MainRect)
+        G.FillRectangle(New SolidBrush(Color.FromArgb(45, Pal.ColHigh)), MainRect)
+
+        '| Drawing the image
+        If Not IsNothing(Image) Then
+            If ImageMode = ImageMode.Normal Then
+                G.DrawImage(Image, New Point(0, 0))
+            Else
+                G.DrawImage(Image, New Rectangle(0, 0, Width, Height))
+            End If
+        End If
+    End Sub
+End Class
+Public Class NEFCheckbox : Inherits ThemedControl
+    Public Property Checked As Boolean
+    Protected Overrides Sub OnMouseDown(ByVal e As System.Windows.Forms.MouseEventArgs)
+        MyBase.OnMouseDown(e)
+        Checked = Not Checked
+        BackColor = Color.FromArgb(21, 23, 25)
+    End Sub
+    Sub New()
+        MyBase.New()
+        Font = New Font("Segoe UI", 10.0F)
+    End Sub
+    Protected Overrides Sub OnPaint(ByVal e As System.Windows.Forms.PaintEventArgs)
+        Dim G As Graphics = e.Graphics
+        MyBase.OnPaint(e)
+        G.Clear(Me.BackColor)
+        Height = 20
+
+        '| Drawing the main BG (because VB won't do transperency)
+        Dim MainRect As New Rectangle(0, 0, Width, Height)
+        Dim BGTextureBrush As New TextureBrush(D.CodeToImage(D.BGTexture), WrapMode.TileFlipXY)
+        G.FillRectangle(BGTextureBrush, MainRect)
+        G.FillRectangle(New SolidBrush(Color.FromArgb(45, Pal.ColHigh)), MainRect)
+
+        '| Stuff
+        Dim CheckRect As New Rectangle(0, 0, Height - 1, Height - 1)
+        Dim CheckRectHighlight As New Rectangle(1, 1, Height - 3, Height - 3)
+        Dim DarkLGB As New LinearGradientBrush(CheckRect, Color.FromArgb(20, Color.Black), Color.FromArgb(100, Color.Black), 90S)
+        G.FillRectangle(DarkLGB, CheckRect)
+        G.DrawRectangle(New Pen(Color.FromArgb(40, Pal.ColHighest)), CheckRectHighlight)
+        G.DrawRectangle(Pens.Black, CheckRect)
+
+        If Checked Then
+            Dim CheckRectChecked As New Rectangle(3, 3, Height - 7, Height - 7)
+            G.FillRectangle(New SolidBrush(Color.FromArgb(100, Pal.ColHighest)), CheckRectChecked)
+            G.DrawRectangle(New Pen(Color.FromArgb(140, Pal.ColHighest)), CheckRectChecked)
+        End If
+
+        D.DrawTextWithShadow(G, New Rectangle(Height + 2, 0, Width, Height), Text, Font, HorizontalAlignment.Left, Color.FromArgb(155, 155, 160), Color.Black)
+    End Sub
+End Class
+Public Class NEFRadiobutton : Inherits ThemedControl
+    Public Property Checked As Boolean
+    Protected Overrides Sub OnMouseDown(ByVal e As System.Windows.Forms.MouseEventArgs)
+        MyBase.OnMouseDown(e)
+        For Each Cont As Control In Parent.Controls
+            If TypeOf Cont Is NEFRadiobutton Then
+                DirectCast(Cont, NEFRadiobutton).Checked = False
+                Cont.Invalidate()
+            End If
+        Next
+        Checked = True
+    End Sub
+    Sub New()
+        MyBase.New()
+        Font = New Font("Segoe UI", 10.0F)
+    End Sub
+    Protected Overrides Sub OnPaint(ByVal e As System.Windows.Forms.PaintEventArgs)
+        Dim G As Graphics = e.Graphics
+        MyBase.OnPaint(e)
+        G.Clear(Me.BackColor)
+        Height = 20
+
+        '| Drawing the main BG (because VB won't do transperency)
+        Dim MainRect As New Rectangle(0, 0, Width, Height)
+        Dim BGTextureBrush As New TextureBrush(D.CodeToImage(D.BGTexture), WrapMode.TileFlipXY)
+        G.FillRectangle(BGTextureBrush, MainRect)
+        G.FillRectangle(New SolidBrush(Color.FromArgb(45, Pal.ColHigh)), MainRect)
+
+        '| Stuff
+        Dim CheckRect As New Rectangle(0, 0, Height - 1, Height - 1)
+        Dim CheckRectHighlight As New Rectangle(1, 1, Height - 3, Height - 3)
+        Dim DarkLGB As New LinearGradientBrush(CheckRect, Color.FromArgb(20, Color.Black), Color.FromArgb(100, Color.Black), 90S)
+        G.FillEllipse(DarkLGB, CheckRect)
+        G.SmoothingMode = SmoothingMode.HighQuality
+        G.DrawEllipse(New Pen(Color.FromArgb(40, Pal.ColHighest)), CheckRectHighlight)
+        G.DrawEllipse(Pens.Black, CheckRect)
+
+        If Checked Then
+            Dim CheckRectChecked As New Rectangle(3, 3, Height - 7, Height - 7)
+            G.FillEllipse(New SolidBrush(Color.FromArgb(100, Pal.ColHighest)), CheckRectChecked)
+            G.DrawEllipse(New Pen(Color.FromArgb(140, Pal.ColHighest)), CheckRectChecked)
+        End If
+
+        D.DrawTextWithShadow(G, New Rectangle(Height + 2, 0, Width, Height), Text, Font, HorizontalAlignment.Left, Color.FromArgb(155, 155, 160), Color.Black)
+    End Sub
+End Class
+Public Class NEFGroupbox : Inherits ThemedContainer
+    Public Property TextAlignment As HorizontalAlignment = HorizontalAlignment.Center
+
+    Public Property TextYOffset As Integer = 2
+    Sub New()
+        MyBase.New()
+        MinimumSize = New Size(10, 10)
+        TopGrip = 20
+        Font = New Font("Segoe UI", 10.0F)
+        BackColor = Color.FromArgb(21, 23, 25)
+        ForeColor = Color.FromArgb(160, Color.White)
+    End Sub
+    Protected Overrides Sub OnPaint(ByVal e As System.Windows.Forms.PaintEventArgs)
+        Dim G As Graphics = e.Graphics
+        MyBase.OnPaint(e)
+        Try
+            Me.ParentForm.TransparencyKey = Color.Fuchsia
+            Me.ParentForm.MinimumSize = MinimumSize
+            If Not Me.ParentForm.FormBorderStyle = FormBorderStyle.None Then
+                Me.ParentForm.FormBorderStyle = FormBorderStyle.None
+            End If
+        Catch ex As Exception : End Try
+        G.Clear(Me.ParentForm.TransparencyKey)
+
+        '| Drawing the main rectangle base.
+        Dim MainRect As New Rectangle(0, 0, Width - 1, Height - 1)
+        Dim MainHighlightRect As New Rectangle(1, 1, Width - 3, Height - 3)
+        Dim BGTextureBrush As New TextureBrush(D.CodeToImage(D.BGTexture), WrapMode.TileFlipXY)
+
+        Dim Logo As Bitmap = D.CodeToImage(D.LogoTexture)
+
+        G.FillRectangle(BGTextureBrush, MainRect)
+        G.DrawRectangle(New Pen(Color.FromArgb(40, Pal.ColHighest)), MainHighlightRect)
+        G.DrawRectangle(Pens.Black, MainRect)
+
+
+
+        '| Detail to the main rect's top grip
+        Dim ShineRect As New Rectangle(0, 0, Width, TopGrip)
+        G.FillRectangle(New SolidBrush(Color.FromArgb(40, Pal.ColMed)), ShineRect)
+        Dim SubShineLGB1 As New LinearGradientBrush(ShineRect, Color.Black, Color.Black, 0, False)
+        Dim SubShineLGB2 As New LinearGradientBrush(ShineRect, Color.Black, Color.Black, 0, False)
+        Dim Blend As New ColorBlend()
+        With Blend
+            .Positions = {0, 1 / 3, 2 / 3, 1} : .Colors = {Color.FromArgb(50, Color.Black), Color.FromArgb(150, Color.Black), Color.FromArgb(50, Color.Black), Color.Transparent}
+        End With
+        With SubShineLGB1
+            .InterpolationColors = Blend : .RotateTransform(45)
+        End With
+        With Blend
+            .Colors = {Color.FromArgb(50, Pal.ColHighest), Color.FromArgb(150, Pal.ColHighest), Color.FromArgb(50, Pal.ColHighest), Color.Transparent}
+        End With
+        With SubShineLGB2
+            .InterpolationColors = Blend : .RotateTransform(45)
+        End With
+        D.FillGradientBeam(G, Color.Transparent, Color.FromArgb(80, Pal.ColHighest), ShineRect, GradientAlignment.Vertical)
+        G.DrawLine(New Pen(SubShineLGB1), New Point(1, ShineRect.Height), New Point(Width - 2, ShineRect.Height))
+        G.DrawLine(New Pen(SubShineLGB2), New Point(1, ShineRect.Height + 1), New Point(Width - 2, ShineRect.Height + 1))
+
+        '| Goind back through and making the rect below the detail darker
+        Dim DarkRect As New Rectangle(0, ShineRect.Height, Width - 1, Height - 1 - ShineRect.Height)
+        Dim DarkLGB As New LinearGradientBrush(DarkRect, Color.FromArgb(20, Color.Black), Color.FromArgb(100, Color.Black), 90S)
+        G.FillRectangle(DarkLGB, DarkRect)
+
+        'G.DrawImage(Logo, New Point((Width / 2) - (Logo.Width / 1.52), 0))
+        D.DrawTextWithShadow(G, New Rectangle(0, 0, Width, TopGrip + TextYOffset), Text, Font, TextAlignment, ForeColor, Color.Black)
+
+
+        '| The inner and slightly brigher rectangle of the form
+        Dim InnerRect As New Rectangle(5, TopGrip, Width - 11, Height - 6 - TopGrip)
+        Dim InnerHighlightRect As New Rectangle(6, TopGrip + 1, Width - 13, Height - 8 - TopGrip)
+        G.FillRectangle(BGTextureBrush, InnerRect)
+        G.FillRectangle(New SolidBrush(Color.FromArgb(45, Pal.ColHigh)), InnerRect)
+        G.DrawRectangle(New Pen(Color.FromArgb(40, Pal.ColHighest)), InnerHighlightRect)
+        G.DrawRectangle(Pens.Black, InnerRect)
+    End Sub
+End Class
+Public Class NEFTextbox : Inherits ThemedTextbox
+    Sub New()
+        MyBase.New()
+        SetStyle(ControlStyles.UserPaint, True)
+        SetStyle(ControlStyles.OptimizedDoubleBuffer, True)
+
+        BackColor = Pal.ColDark
+        BorderStyle = Windows.Forms.BorderStyle.None
+        Multiline = True
+        Font = New Font("Segoe UI", 10.0F)
+    End Sub
+    Protected Overrides Sub OnPaint(ByVal e As System.Windows.Forms.PaintEventArgs)
+        Dim G As Graphics = e.Graphics
+        MyBase.OnPaint(e)
+        If Not Multiline Then
+            Height = 21
+        End If
+        G.Clear(Me.BackColor)
+        Height = 20
+
+        '| Drawing the main BG (because VB won't do transperency)
+        Dim MainRect As New Rectangle(0, 0, Width, Height)
+        Dim MainRectHighlight As Rectangle = New Rectangle(1, 1, Width - 3, Height - 4)
+        Dim MainRectBorderFill As Rectangle = New Rectangle(0, 0, Width - 1, Height - 1)
+        Dim MainRectBorderDraw As Rectangle = New Rectangle(0, 0, Width - 1, Height - 2)
+        Dim BGTextureBrush As New TextureBrush(D.CodeToImage(D.BGTexture), WrapMode.TileFlipXY)
+        G.FillRectangle(BGTextureBrush, MainRect)
+        G.FillRectangle(New SolidBrush(Color.FromArgb(45, Pal.ColHigh)), MainRect)
+        G.DrawRectangle(New Pen(Color.FromArgb(25, Color.WhiteSmoke)), MainRectHighlight)
+        G.DrawRectangle(New Pen(Color.FromArgb(200, Color.Black)), MainRectBorderDraw)
+        G.FillRectangle(New SolidBrush(Color.FromArgb(75, Color.Black)), MainRectBorderFill)
+
+        D.DrawTextWithShadow(G, New Rectangle(2, 0, Width, Height), Text, Font, HorizontalAlignment.Left, Color.FromArgb(155, 155, 160), Color.Black)
+    End Sub
+End Class
+#End Region
+
+#Region "Theme Utility Stuff"
+Public Class Palette
+    Public ColHighest As Color
+    Public ColHigh As Color
+    Public ColMed As Color
+    Public ColDim As Color
+    Public ColDark As Color
+End Class
+Public Enum ImageMode As Byte
+    Normal = 0
+    Scaled = 1
+End Enum
+Public Enum MouseState As Byte
+    None = 0
+    Over = 1
+    Down = 2
+    Block = 3
+End Enum
+Public Enum GradientAlignment As Byte
+    Vertical = 0
+    Horizontal = 1
+End Enum
+Public Class DrawUtils
+    Public BlueTexture As String = "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"
+    Public LogoTexture As String = "iVBORw0KGgoAAAANSUhEUgAAAMAAAAA1CAYAAAAXg+StAAAACXBIWXMAAAsTAAALEwEAmpwYAAAKT2lDQ1BQaG90b3Nob3AgSUNDIHByb2ZpbGUAAHjanVNnVFPpFj333vRCS4iAlEtvUhUIIFJCi4AUkSYqIQkQSoghodkVUcERRUUEG8igiAOOjoCMFVEsDIoK2AfkIaKOg6OIisr74Xuja9a89+bN/rXXPues852zzwfACAyWSDNRNYAMqUIeEeCDx8TG4eQuQIEKJHAAEAizZCFz/SMBAPh+PDwrIsAHvgABeNMLCADATZvAMByH/w/qQplcAYCEAcB0kThLCIAUAEB6jkKmAEBGAYCdmCZTAKAEAGDLY2LjAFAtAGAnf+bTAICd+Jl7AQBblCEVAaCRACATZYhEAGg7AKzPVopFAFgwABRmS8Q5ANgtADBJV2ZIALC3AMDOEAuyAAgMADBRiIUpAAR7AGDIIyN4AISZABRG8lc88SuuEOcqAAB4mbI8uSQ5RYFbCC1xB1dXLh4ozkkXKxQ2YQJhmkAuwnmZGTKBNA/g88wAAKCRFRHgg/P9eM4Ors7ONo62Dl8t6r8G/yJiYuP+5c+rcEAAAOF0ftH+LC+zGoA7BoBt/qIl7gRoXgugdfeLZrIPQLUAoOnaV/Nw+H48PEWhkLnZ2eXk5NhKxEJbYcpXff5nwl/AV/1s+X48/Pf14L7iJIEyXYFHBPjgwsz0TKUcz5IJhGLc5o9H/LcL//wd0yLESWK5WCoU41EScY5EmozzMqUiiUKSKcUl0v9k4t8s+wM+3zUAsGo+AXuRLahdYwP2SycQWHTA4vcAAPK7b8HUKAgDgGiD4c93/+8//UegJQCAZkmScQAAXkQkLlTKsz/HCAAARKCBKrBBG/TBGCzABhzBBdzBC/xgNoRCJMTCQhBCCmSAHHJgKayCQiiGzbAdKmAv1EAdNMBRaIaTcA4uwlW4Dj1wD/phCJ7BKLyBCQRByAgTYSHaiAFiilgjjggXmYX4IcFIBBKLJCDJiBRRIkuRNUgxUopUIFVIHfI9cgI5h1xGupE7yAAygvyGvEcxlIGyUT3UDLVDuag3GoRGogvQZHQxmo8WoJvQcrQaPYw2oefQq2gP2o8+Q8cwwOgYBzPEbDAuxsNCsTgsCZNjy7EirAyrxhqwVqwDu4n1Y8+xdwQSgUXACTYEd0IgYR5BSFhMWE7YSKggHCQ0EdoJNwkDhFHCJyKTqEu0JroR+cQYYjIxh1hILCPWEo8TLxB7iEPENyQSiUMyJ7mQAkmxpFTSEtJG0m5SI+ksqZs0SBojk8naZGuyBzmULCAryIXkneTD5DPkG+Qh8lsKnWJAcaT4U+IoUspqShnlEOU05QZlmDJBVaOaUt2ooVQRNY9aQq2htlKvUYeoEzR1mjnNgxZJS6WtopXTGmgXaPdpr+h0uhHdlR5Ol9BX0svpR+iX6AP0dwwNhhWDx4hnKBmbGAcYZxl3GK+YTKYZ04sZx1QwNzHrmOeZD5lvVVgqtip8FZHKCpVKlSaVGyovVKmqpqreqgtV81XLVI+pXlN9rkZVM1PjqQnUlqtVqp1Q61MbU2epO6iHqmeob1Q/pH5Z/YkGWcNMw09DpFGgsV/jvMYgC2MZs3gsIWsNq4Z1gTXEJrHN2Xx2KruY/R27iz2qqaE5QzNKM1ezUvOUZj8H45hx+Jx0TgnnKKeX836K3hTvKeIpG6Y0TLkxZVxrqpaXllirSKtRq0frvTau7aedpr1Fu1n7gQ5Bx0onXCdHZ4/OBZ3nU9lT3acKpxZNPTr1ri6qa6UbobtEd79up+6Ynr5egJ5Mb6feeb3n+hx9L/1U/W36p/VHDFgGswwkBtsMzhg8xTVxbzwdL8fb8VFDXcNAQ6VhlWGX4YSRudE8o9VGjUYPjGnGXOMk423GbcajJgYmISZLTepN7ppSTbmmKaY7TDtMx83MzaLN1pk1mz0x1zLnm+eb15vft2BaeFostqi2uGVJsuRaplnutrxuhVo5WaVYVVpds0atna0l1rutu6cRp7lOk06rntZnw7Dxtsm2qbcZsOXYBtuutm22fWFnYhdnt8Wuw+6TvZN9un2N/T0HDYfZDqsdWh1+c7RyFDpWOt6azpzuP33F9JbpL2dYzxDP2DPjthPLKcRpnVOb00dnF2e5c4PziIuJS4LLLpc+Lpsbxt3IveRKdPVxXeF60vWdm7Obwu2o26/uNu5p7ofcn8w0nymeWTNz0MPIQ+BR5dE/C5+VMGvfrH5PQ0+BZ7XnIy9jL5FXrdewt6V3qvdh7xc+9j5yn+M+4zw33jLeWV/MN8C3yLfLT8Nvnl+F30N/I/9k/3r/0QCngCUBZwOJgUGBWwL7+Hp8Ib+OPzrbZfay2e1BjKC5QRVBj4KtguXBrSFoyOyQrSH355jOkc5pDoVQfujW0Adh5mGLw34MJ4WHhVeGP45wiFga0TGXNXfR3ENz30T6RJZE3ptnMU85ry1KNSo+qi5qPNo3ujS6P8YuZlnM1VidWElsSxw5LiquNm5svt/87fOH4p3iC+N7F5gvyF1weaHOwvSFpxapLhIsOpZATIhOOJTwQRAqqBaMJfITdyWOCnnCHcJnIi/RNtGI2ENcKh5O8kgqTXqS7JG8NXkkxTOlLOW5hCepkLxMDUzdmzqeFpp2IG0yPTq9MYOSkZBxQqohTZO2Z+pn5mZ2y6xlhbL+xW6Lty8elQfJa7OQrAVZLQq2QqboVFoo1yoHsmdlV2a/zYnKOZarnivN7cyzytuQN5zvn//tEsIS4ZK2pYZLVy0dWOa9rGo5sjxxedsK4xUFK4ZWBqw8uIq2Km3VT6vtV5eufr0mek1rgV7ByoLBtQFr6wtVCuWFfevc1+1dT1gvWd+1YfqGnRs+FYmKrhTbF5cVf9go3HjlG4dvyr+Z3JS0qavEuWTPZtJm6ebeLZ5bDpaql+aXDm4N2dq0Dd9WtO319kXbL5fNKNu7g7ZDuaO/PLi8ZafJzs07P1SkVPRU+lQ27tLdtWHX+G7R7ht7vPY07NXbW7z3/T7JvttVAVVN1WbVZftJ+7P3P66Jqun4lvttXa1ObXHtxwPSA/0HIw6217nU1R3SPVRSj9Yr60cOxx++/p3vdy0NNg1VjZzG4iNwRHnk6fcJ3/ceDTradox7rOEH0x92HWcdL2pCmvKaRptTmvtbYlu6T8w+0dbq3nr8R9sfD5w0PFl5SvNUyWna6YLTk2fyz4ydlZ19fi753GDborZ752PO32oPb++6EHTh0kX/i+c7vDvOXPK4dPKy2+UTV7hXmq86X23qdOo8/pPTT8e7nLuarrlca7nuer21e2b36RueN87d9L158Rb/1tWeOT3dvfN6b/fF9/XfFt1+cif9zsu72Xcn7q28T7xf9EDtQdlD3YfVP1v+3Njv3H9qwHeg89HcR/cGhYPP/pH1jw9DBY+Zj8uGDYbrnjg+OTniP3L96fynQ89kzyaeF/6i/suuFxYvfvjV69fO0ZjRoZfyl5O/bXyl/erA6xmv28bCxh6+yXgzMV70VvvtwXfcdx3vo98PT+R8IH8o/2j5sfVT0Kf7kxmTk/8EA5jz/GMzLdsAAAAgY0hSTQAAeiUAAICDAAD5/wAAgOkAAHUwAADqYAAAOpgAABdvkl/FRgAARlhJREFUeNrMvVmsZld2HraGvc/wT3eogcXizO5mi2q15I5kOZLlOHaQRLZixIaDBIERGHkKjDwZMAIHyIPfEgMJHAcOggxIEAEGjNhGBhiy7Nix7LYmqFtNsVtNNtndZBVZVXe+/3iGvfdaKw/7/LcuL6uKRXa3k0tcVLGq7j7733uN31rrO2hmcPnrH75zBwAA/s0vvnzxZ3/r13+dAAB29/eh7zoqqwpjCOi8RwAAIqIYIwAASErQbjYIj/kSEQUAWC0WBgCQhp8DAKjqGgAAJrPZ9ufpSWts16nq2gAATo+ObDmf62a1AnbuIz8znc0AAODFz38ei6IgXxQwmkxwWI+2eweAT7X/7bMvf6UY8fLnqMdjfNKan3Q2k9nMHrf2487oade/vPYPsver6z9q7e36l9d+3HlfXss5B857296v9x5WyyUAAPzVv/SX9MqPGnyKL7yqAL/69nsAAPAnXn/1Qvh39/fhrW98g6e7u9S1LYsqgyr3fe+898jOIQCgqYKIfOTDmOrlDwUqojFGK8pSnfeSYoSyqqzvOnTeQ4qRYwjkiwLZOSSijx2OqlpZVZZitKKqtCgKUVWNIajzXkREN6uVAgC898479sprr+H58THt7O9jPRo5MWNQ5RgCFWWJgw5v9/jE/ZuZxhDMF0Xef0pqqgYAUJQlxBjZRJCcIwRgHPZ/9XNcXne7NgCAimhRVdqs1+qLQgHx4T80I1PFoqo4hkDDuX9k7avrXj37lJL5orj4DICopmpX9y4pIRHRo+7gUc+4fDYAIJfXJiJw3l+sbwDsnCMkeuz9AgAws27vd7Na2Xg209F4LPOzM9msVvreO+9YPRoZEcF/+Zf/8mdShI8pwK98+3vwS1/6/Ecs/4M7dxgQ3fz0rFgu5hUilinECog8qDhAZEAkU0UdDufSuhcfUEXMzISYIwBIWZaRnBM0E0NkUOO+ax0QsYl4IiJApOFQ4NKC5otSEUEQKQGYsHOhqutIRJGdC4iYDEDKqhIwo/nZmQtd59u2rZioUNUCED0COEBkvPKcJ+0fABIxJ2bunfepLEsREVVVin0oDMxLSo6I2cAcISISkao+ct3t2qpqTBTVLDGzOO9DURQJiQwAIMboU4yPXHurQI9ae7s+ICqaJRFNRVkE9j4WZZlMVZmZ+q73KUWXYvTMzgGRQ9NP3PvVuzXRWNZVKMoyDucFiMgxRt83bUHeOVN1hMg4WJ7L6zMzAIA450RE1TmOZVVFAIiqGsfTaV+UZVwvl+nGs8/q22++Kd1mA//LX/tr+gjBf6IiuEdo30f+vx6NaL1aufPTsxrMRuvlamZg07quK8fkuCw8s2MzJURCAPuYUuUDUjMzkJQkhCAphLRoW7UkkR0nM+CirjwhkWfH6AvPzhEifMxKbNcyEU0pagghhb6PGmMoqqpxRbEuq6qr67oHgKgpUde2Rds0dezDlAgnRV37oiwdMxeIyET82L1fWLkkpqoS+176rktNv06q0vqyjIUvJKboJUk9mozZec/Oe8/OM4Dxoyzdxz6TisaYLMWYQt/JYj6PhfcdMQMxg6RUVKMRO++d896x84wItFXej167XbHQmvcegor2cb1aSYqpL8oyeO+TmroUU+GKoigLj+x96X1BBsDMRJ+4dzNQEem7LsWUZHV0FB1zV5RlYHYaYygAoC7rEROSK+rKkcty89j7VVEA07Zp02q+kBhD75xvV8vlpijLTVXX7Z133w2x72Po+/Qf/sW/SIMSXBZ8fJIifOzCER/u5X/6lV+h5195hX//d79R3r97d7ZcLve9c/u7+9cmZV2N2PmamQozcITIlgUITQ3s488zSUlTSklEUwy9pL7vQ99HUxVXFFiNx0VZVd45XzATA5IjAAZEBDNUM4O8spmZmghISlFEUt+1IYXYt03TbZbLDohW4+lkMRqPe18UsFou677tduvJdDTb3RlX9ahm5ypCLADBIQBmL2ag9sgwwjSJxZSSqsS+aVNKsdssl23o+4TMUFYlTqazoqjqqqwqz84VzORUjQmRwQwVHqNhBppS1JhSkhhTDKEPXdd3zSaagZZVhWVd+2o0KoqyLIjZMbMDA0eEqGqUl3m4PEG+zOHcTJKYSAp916e+bfu2bdqu2UREEl8UOJ5OfVWPyqKqCuddwcTeAJiyguET9n9xtymmFNo2tH3Xt+tVqzEldA5H4xGPprOiLKvCe1867wtAdITIH1nbbBBLU5UEqppSjBL6vk8xhnazaZv1ulPTVVGWc2besHMb53348P3342x3V3/5r/91fYzQ2yd6gMu6cHZygnvXr+Py/Lzq2nbmvd+/8fIXPjf50h/6n4kQCiJgsI/o2BPVDQxEARIAJDVAMDj9+j/9y3F5dja+/uz+5Ms/918wImSpB0B8olcHAIMYwnlKqVuenXzbus0d//5bv+W832xWq8ny/HwW+35R1LXEPozq8Xj67C/8yb9SznZ+lonAIwLhdmUbnoJP9JlqBskAomSX3c7Pv37wz//eX2PntB6P3Y0//Ev/HTk/9ozAeDVD/aRcMq8d1MDUQCVt7v3jv/sfm5oWVUXP/JE/9d+Sd2OPCEx5/aubtSf8nxqAmEFQADOF2DYf3vt//vf/DAFSNRrR9Z/7xf/c1ePnPGWLQPjp9i4KEA1AVMDM4PC3/tFf3JwcHHrnbfe5F5+Z/dTP/9eEBH6Qm6e53xRjE2NcdOv1nX55+pa/8/ZvF1XVrJfL6WoxnxLRcZlzos10NrOTgwP5iZ/+afzW17+ujziIj53YkxQAQtdBWdccU3IAMJlMd0aTFz//79+oXHutdk3lCqscsaMsNAgImAUXcXAmdEm8gpguY0oxRjARnCuO0ktf/NPLd77xf42ef+VPPTutm+sFb7xjrJiIBneEYACIQFulMAMFBFODJgkHtfH6xv7PL/r4L58+/+q/t3j/nb+L7775G7ikZds2oyQSqnrk967f2J/U5cu3RsViVvq+8IwFEXGWegNERDAkys+lwR/a8J3UdBWS9CGaSsImqT+ejF5aTmc3VVK/9+rrPzOtCnxpWp04723kHXkmItiej8FgjHE4I7DhAWoAXVJZ91FSjCia8KDH0bUv/MQfW77/nW/sfe71n5qUDp8bFafsHNSFx4lnxzl8MLiUueRHmA721AAMDRCSqjVJRGLElAS+j/j8/vWbL27Wq8XO/vVxVdfPvTotjr33WnvHBSFurwC3LnK44o/EFmbQieiyTymGgKqA82h1+vyX/p0wP/lbRVXq+IXP/9kbVdHsl9xURQEVEzmm4WofGqLhAWj5PiCoYZtkvAnpy+ftc18+fuEL/0Fzevg1+MY//V8BrDo/OfEiQqaKfdtaDKENOREnANjmBPg4m/xEBXjx85/H0PfomJypVqPJeOwAJsxkpS/EO29V4bEgpASWYlJoRVKKCS3LLBBRvgIwTEkxhR5VBUzB1AA849hUdxzgxMwAAQ2JxHvPJRMlNQ2i0iVNScTUFAEAmMjG3vn9ceHMAPZEu70Y9Vrh3P3yS392fPO5P/rgN/7h3yCEUzXofVm6qh7tgxoggiKiAjmrCnYOCYOoBlVpk4iGRFmXDQgZt85NRTHFgCoCqgJggGoKRVFeCwE23vl9QABCNES0sqy0YgIAsyCmnaqklEzUEAzQtpJlBsmENCpIDJjPAcBUrSz8Hjs/Lph31RRUBBAMegQVg0BshtvLtRxDELN5Iiwdk0NAQkRVhU3SREkhmVHWeANfVc9w11BRlrsAAIxoRGTEnOrCO8yZp/SiqU+iokKX9AHMLN9tFIwxYA5bzIAIvOMREU2JmDzjhAiBiRSQtCgKLplYDCSKapeTc9O0ReEMxvUYZiWVuwgY1cKNGOXWpFp/WPufKEd/4j998PWv/g8xhLtnJyeISBmGNJPxZGIAII+x+h/5/8cpAAIAnJ+c4M7eHhqSY3YlApSmxqoKEiJEAE2eIxrh2aYNKQRMKZKogCWlwYfmUDSbJrRLMZJqxvBMdWymTkUgxXzNpXOGqHy2afrYRwgxoomgmiACGiJiUxTRF1UYlQXOSlcVwlKXhb1EIM70hv3BP/offfDVv/8/JpENM5OqThUMVRRSDGBgIr7GPiVZbJoUY2BJEVUNELZeDNEoG+3hYB5+BiRAIiQmD2YTlVRoUkgpGQBqUNOKwZ91sQ9dj0kCpphARR8m3FkDcLDamG0AApiCmYLzJfyBH3/9mQ8jIeT8hDQIxBgtG2NQQMsnbJjdDAIwszhXxKIodKcqKkdIm75Pse1YTUBVM2yd0gTNeklprGaQJJr1KkykVjiad7FtuxZiTKySUFURzLKjJ8SsAIAXftoALWsiEDH5sioMrDBRJ6IgubahqXDgmW3edX0KEWIMJClt0SAjIoxtb21dN74oYafkqmDWsvD60s5kVSPs2ld+/i9sjh78V0VRWrNZ9wDQGWIgZnn5tdfs/XfegScowid7gBQjpJRIYmRiIkAsDJRUDUSjai+6UEigil2zQc35kQEYYgYOaJsYwxC+mA1XnhNZGNe1OzQtVcSZqEU0RRFdKiQzgWazIQPLsfmwvoICKJi0LfRdh63zFmY7zbR0pXaazAyfHZfrVbfz0uSZ539sdfjB+6YqKmlkamQmFpOomMGpWhdDwBh6VFXNTh8ZcAgckCCL1NbjExICEDGmZFgUJY5HI79ZLUlEnJpifhRo27USoovNasViYqA2CE8+AMyhFmnOXMkALed/dmFhp2UxLk13UUkBMcdKOczJsRThkENmC2M5NzFJyUIXrGWCvq835Bn7deNkC4ci0AApeGQuY4x1pQomZkkF+q7VI5Wm22wwpUhbKbetVbiIgnAAUwAAgQb4CQEAq6p0xMSx7wtVdWZqqqgkCfqkfdu30DZrFFE00G3AZkMuZjFFiKuAhAxpNm1GhXeMlASguDau2kU73bv1lZ/7t1b/7B/+n6v5PJjKWgEaJOqHOpBeQYHwakj0xCR4KJ4Mt84OwLyqEpqBpnzaKW5ARUDUFBHogbpnqCi8IwS3DXSvoHNqOcFyiHD67jffDSGwgoGZgIoZAFqTNiYiCKaKgHgf/S0qSl8TARJALwbabZprms41Blkt52DTnd5MaMCkbacu4+r2Sz+7PPjg3MyiiI4NDFUH3D2JpRBQRNBUTZH9WTG+jUOi5vCjifg2vhYDUDAADzDR1YPvn5xojNGriDMzEFFDIOnbzkAVkqkgAN3rZU98XXtGcPQwp7FLaZoagIBBUgCPqfPtci2MNG7DOVcVnrLbo8v5EDz8+QQ5OVfN3ygh3oJ0b7NeI4Jl8wOogEiKSGQaTM2riBcVbwZgCGYi0Kuy9b3kkAvsTGkvlqMJE4FDBKaPm1QbkmwZ7rc8eO/+arEovPdeVZGRoGBSMJRu00CSlKFOA3w/4LNYVEXlERgxAw1J0khDc8PDYjlfoIwnsahKVBEFU749G7WLZ1/8w575n7F3bbfpd0RkJSn1KSWBfCTbXOBTo0CwWiwwxYiqQmCKAESqSls5znmoXZisHrCI7Squfvfrv+eLIs0mY6p8ke2WmSCSahZoKasS+xC7kw/unMe+RxVFNVMz1CFbVDQFA8MOeJSaVVh97Z+8cW1/39VlSednpys3u7aTXv7Sl29p84Gqwnq1gKIoTEQV0XDsXVfO9l8AgKmI9CnFylQJTMXQwAANLT8VEHEDOF7f/e6DeHjnw9IXMh2NqCg8QL5TRQBVVVVJURXieDKiruv7+emJOudMVXGwzcpIBpYBYQYkA4NOsV785q9+zRdepqMx1mVBzKx5fVNQUzVLIhLBLCCzetDE5HDMBHjvnb/DzjERVmBWglqpYE5UuOl6WazXIiJOUmIcTfcmL37hVSi9AhhovqML53smOOqPPnivbdbWrjfeVyO3jUtzaK+SjXk2yUHVLb/9O+/YZjkf1ZWO69p5dgpm2R4MZyOSggHG8XhM7915//56scDpzg6ZaXYghIqIagaKmp3rWqRKzSYuf+cfvbG7s4O706lfr1abXoTCC198EWY7OzcKd973HSKziapprqRp6Qu8/rnXf/Ls5GSdRHZM9TTFWI7G43B+fJwuhUDwqZPgnOwpSBJUM1RNnC8ZYHDGxoCWEM3MyAAgNC2eHNxHSdKPqyrdunGjKLw3QBDMeV/y3sFqvYhvvPX2e6vzcxhPxqWqDIiRGl7Uo7YIkkFoOzw9PMB2tWxvXtsvTo+OI5+dr/aqyeH65q3JVHVFiCZqmJ0RqIkBOsSyrHZE0jKlVFiWdQPYhvYEiIPtA4R2s+bzDz9UUW32ZzO8vr/vmEgBQAlRAFHNTJxzqhtN//ev/oOviaRy//oNVpXsVpmBGIAJzBRAFVQAWWKE04MHpKI9MTUvPPNMUdcVIaIQoBqCIKKCQWIiKb1PBWPXd12zMx5Tl0IwiU7VSE3NVFNMyZ0t5uHDB4cdMk48u5Go6u5PvvrinvdzvIgch8NEwB6pCDHq/L3vPGjmc+lD4MnQA4RDuoOIaKpbbAxVBJbzOW8efChqur5940axM5sSZo8ihKCApKaaCu+0XYTu67/1G++x93U9GquqAqIBIxgRKACaKVkYCq8aAi1PT2mzWLT07C04ODhsiMiHrn/AX/lXbt12eGaqENoGzcBMVY1AiNl8XV9DxInGNA4x1CkEF2PkwfrLIzDWizDIPS4B3laFYwhopphSAhMFVckpTo4DDQgM1bZ4NyZJsDg9S2dHB6uuac9+4Q/97M6N6zc8ISYkFFWNsdP+/sHB6bvfevNkMp1NyrrCfEJbOURDAjAdckFQEEm4Wszl6IO7c3r55eLw/v2mHI360fOfi3DzmZqRDJGAwAwNBMDYEG3wLIUBeEnJqyqZmQGaGqAyUS7BDFmpxIQHH37Qr1fL1Tt9OP83/tU/emMyHiMRJSYSM5CYYteuYnfWNqvj+x+uJrt7KpJcDr0UmLLwM6IpICJlsFM0QQgBjj64u2k2m7PNrVvyB7/yleuIEIkoIZKqSoghduu2WT9o2sVms16BQTOeTuDa/rV6PJlM6qqcOKIxEpXf+953z373zTdX7NzueDrtJ7NZ3P38l35sOp7gpOAW1EzswmgRIOA86vjo7d97//zkeGMxaug6S5IsCynhhYQgAZIC5sQEJEY4+OBOt1mvlnfehtUv/vE/fst5L4goTCS5HSv2y9BvDo9PTs6Oj5q9a9fAEAod4DsCMAIEIoJIGUkjQhARWJ6dpc1ysaKuWd87OFyVVVVcU7VJDMzkURXBNHtVBdPYB+7axky1UNXaTEemWgFAKVkB8NL3p4dBm80Gc1YOAAY5VhaFLboMaADIYEAIqJg9qEJo27heLONmsw7/x9/7e2/Hvl+ISGuq/WQ0khvPPOOOj4+70XQ6kqomNPC5EUBRCRCBkDKYAICAhASqCn3byWq1lDe/+eaxL0pm51RVdJs1DaWBQXkN1AxUBdTMgwGrCOtQpDEAI0IApJx0qJohgqpY17bSrtex3Wz6/+3v/J3fU9W1iHSm2otqFJFIGaqVyWxWSgiESIUBCJoB80X9AJHIQBXQDE0VUozato1sVsv4rdOT0zff/L13U0qNptQRYooiQUXCbDqV6WSiMcbOVENRFDKZTqGqR54dV8xczRcLPDk7K8qq2h2Nx84mE+fKsho/9+oXb88mB4AEioJqimDARoiN4qRZnLUn3//OyeEHd+YAuPZl6VUyNr2F/QEBVA2zWTAwU0hJoGuatFmuQui7zS//zb/59ZTSygB6EwmiGmMIkZ1L48kExuNxqQYOAYOpGKhmWcnY15DxGhIiqQl0bZvmZ2f9/PzsnJlpurufUoyliQAToeaSNiiY9V2PTbOxvm1RRLyo1mZWmlmZUnKq6gb5Tp8ZBdp6AVVBM81NSyYZzsw2kygjCluZAlMFBRMDS2DWodmSiBaS0sZU28VqlZq21fFsZsQc0bkSmWowtYtKuCkYO1MwwqGUn72PioSYkiRl7yU/0AQeookDlHhRF8o5tAgCAooKW07qMeeDaMzOIgQjIlIDUEmAYAJmCRGj9z70IbRm1gBRjwA9phRNJPBopOxczd5XxDw2AFWzHF+ZEhGbGqANxWUzzfiPajSAhIgdMXek2gJzAwA9ivSi2p+cnvbHx8exbZou9H0/hF/bFmw3Go2qcjyuJ9PZjJipKKtyMp1V+6//zM/sT0etd5xdvyqYqUMgNAO3UJze+8Zvfuvs8GDZrNYNIMiM2cxUVRUsI0o21Fo0SrqohpmJKVgCBEGiwMytAnQmslGigAA9IgYAiERkrigmzDwm4pFmr5tbZQBIATUlIM2oGIIqhBhC37W9qgbnfarGoTKDEkxB1dgMkiFY6HtbLlcY+x5EBFWEzMypmRcRT8xOVR/lAfBqdfhJdQC0IQS6EKaMcICZghkhIoKaDgHEVuYU2HlzvhDnvTIzUYzIRJrTTYvMHOvJxKq69t65zhdFb0Oe9jBeNcyGXAmAQU2NmJW9Vyq8FEUpRVWR2jbgz3ILcpEDgCmSqmESMQIDdR414+uaYVgwZlKAoc8otyBYUVZQjceARBhj9BVimZyLW4XrkSI51qquY1EU5LwPzBQQICO0akCUEx5mtCRAamimBuSclaMRiBnEvi9SjKVzLqhqoSLCzokryzZ2XWrbdoOInfc+bFar2HedVqMRsnPOAEJd11pUpa+qWvdu3pCdW7cnfrb3yu3J+BARQUU4pTTYB+O5wGx1/87p6b0Pz4/v3zstvO/6PoiYoQFGG9AjM0NkMiIewNZtpZysqmvQEC04zymGglIqNKWkOQlORATeOalGI/G+6Nm5jhynbMMMxIBEVUwRQ0oZ+AUgzdKRRKRXkZ6ZAyIKAIxMFDSjSxhjj4v5kmLXZYhEFVSEQJUNwElKpCJclOVlBfhsHsAGobeHLcJDsc1AVADArCCGoXCJBmCmZlVd02x3h7x3PsZYqmotImIiHGNk51xfVVXvnLeiLCUrrKqawtDVi0B00SJraACmVlYl1+MxIyKNp1OoRyO0DC+A5mwB8yXmVgNRQEgxqSQQM8IULX8WRAVF1MGmAWBGs9BUFUaTCbFzhcxSaQa1qiZTFQOD0PXarFeWYoSqrrUejcx5r84X+QOYgigYoikjGjmvScySAQ0Zpc329nw1GhWapFTV0szSFrvvuw7W65X1zgXnC3DOpWazCexcwNwijfVoxLvXrsHO/n6s6trt3bgJe9ducPXSF3/p9s5kmYvWCiIJ1BQRgROwb6L6D9/47feOPvzgvN00S5qM1xKTIaIDgJThbEEwAGZC55yGnAgMBRi16c6u974oRaUCs8pUkxmIiEDftdasVqaiWo9GTVHXxs7pkB+YikIfFYgMgQBNJeccuZMUDEwAMapZD4iBEBWJelOBKAYpJVucL6jrejDVHECZwoC+MaiSmjlVpW2xbkiE8XEtEZ8YAg1KcBFWqCioKWR0XjGZGDGrqhANxhWJaGdvvx5NJrUBzIasHU2VQ99T17YOCX1Rlq4oS3DMajpkvKCoikbZ3ZuZaU4BDJDIxrOZd95VdTVKVFQFjvdenTj3AFExRTETyaiFGTRJiub04H6MKWqK5otqWyjK7ZcqqEmNmJOakit8VoCXX//c1LlARD0gB2SIgNyDWVKDuDp68PuH3/yd31UVQGYrvd82XZqZgoiCKCIyAZclqIohqYAalLdfec6J3GB2ARB7RA7AEMEoGkBIovHo21/7+0ffezf21PRMtEYA6ds2xRBk79o1eOHVV3G6uwuj8cTXo1F1/dnbZX3rhS9X1Wh/d1zN1QQkJQqhBwREZMSzkKYPfv+NO6cP7i/nZ6fzrm1WIfSrqq6JiCpESEP9IKdUalY59j1xMgQlRKB6Oh2//GOf2/H+BUAMee8YEDhs4dvjt77xD84/fP8QiYEIuSi8IdHQ4jxUnw0xt8IYARhJtuIABoqIQkSJmeOwRlJRiDHC+dmcuq7NG1QDQIPsOQQ0C/q2NRzNjC4JP34mGPRjwJENkz8qoEq5EskG7JyqqBWMPRXlzf2f/Lmf9I6BiJQABQBUM0Qpqmp92x7c/eqv/DeIgMTMgEgqAqYZvjETSIaKyKpmpGBmqlA/9+pLBtgzk5aT2cjvXH/hlet7HzrHURVNUpfdEeb0pI1azu9870HfNh0SZt8gAjSg4apqMSXLtQcHY7D5My9/br8uitHIO/bMhAiYFGATk4WYQCTB+tbtXyjL4pfvvfHbv2lqEYiAENFUcLCiAIAQktjYzIlKBDB7cTq+O379y7sj76hgYhoUtRe1TR9NRFBSgune3lea48P/RFIcI9HKCNu+76EsS33pC1+gazduwGxvz4eun+7duFFNd2ZVGO//ief2Zk0WNICYIphmS9sb1l3TyMF3vn3w4P3vH7ebzSKluISi2BCRJ2ZCYjEVEFU0U1MAW3ZdLwAIanS9Ko7jF17fnVZ+WjAzExIYQBCxdRBLklBiwunNZ3/x3V/923+hXS3QzJTZYY5lBdQUkmnOfXMRAFTF+hAg9sEw91ApEQkSKzEpIEkIPZyenmLbtkOLVjbKgAgwQPUwgB6DpyJ76AGu9gBd9gLoPikBvvACOSbPwi8KxttqIxk7b0kFGSg+vzu9pzvTelx5VzI7QPBdFFuHpClGEklwsFjfHk0m+7HrOgPwBkAqiqpiCgp5uMrMl2QiogSw3huP4MaXfmp3UhakoBAFUl3696fTqY594ZZ9G00EFQFVgc5C2D/8vd/+/c1y3sYQwtCHIaIKSQQQJKNEvQEQoaaETCwv3bh+6pzjuq7ZOeeZkLsklmJkTZFEFO6cnJXn3u+z43roAPdmlqfhVEGG0E1DD2crDCH0aKZQV0V8eXzjnByj855KJteLWgyBYgiUUsJWxG2aDU92966tF/Om77qSAFxZVbh37Ro+c/s2VaNRZQaTyc7OeLa7O4nja//6ZFS5unCNmphEybO9iMhAPO/S+N6bv/P2/PR42W7Wm9C2CwVblEXZE3FFzJ4QJQMEGWIXDWZglBtYzQApvvTM/nlRVuidY8/sFIz6PtB+SiAxkZlCf/+43Ll+/VZom56IY0rJGQCZSL5fYTBQIHYoIhhisLOzc0gSARAMh0R/SALVzLRtGmitBBMF2VbzVAERQdVQVXErn4+YkcbPXAgDAIh9/3DeFGxoe1CLkkzNTGJUMbC+aw0AqPA+esfqCs9I5JCJq0LQFwnNShJVOGs6GE13byzD0SGAOVUdGq0EoopqMmM2UDBLIQAgws54tPFlsS7LMo9fiqCoQB96FNWYYsCkqktJu53A5PT3v/b20Qd3mvnRUWeqVlSVAiCZJjAVVMuCGiERAlpKyUzFuHdYFAWG0BMxgyOEZMagRvnA1VQjJEneAAvHFESEzYxVFdXEJCuCqRnGEDClZIDAiIiUv4nYcUOIBsYqlsEEM1RJkCSimVWmVqeUCknJMbMbz2bGzhWOuU5qe7O9/Ykrq2utr3/xi/s7xwpmmsRC7DGnG0DnMU5X5yerw/e+d3r84d2zzWZz3od+TkQbQOycY3TOVQCgQ0IJlvcOQRTF1BwzAhCJRAxtR8SMyJR7DDJ+RBm/QxCJIElKJPTsXUQApyIkksDUIA3FQgDFTdfa4vSMogGayEdHbbZjGWagKYGIA1HJWHdGOICQQCXlvM4eOciBn6QETx8CXXiFBCIREuaeF4CEnTWUe4ayyekBkZiRmYCZ0ACHHsXc4y0qIKCemVmTOBNhkQQxijlNJpI0xgwZmygQEkoUTLF3oW2QBjOhQ+c7kkNCBASjlNQvj4/7kwf3tduso0hSTYmKqk55zCgr79CYjyoG8/kZruYLQiQiZnSeybFHZsKiKGibkKsoACIdL1eYYiAwA2I2VWE1I00JTRREkkmuHJkJIKCRmcJqtQFJCb33UJYF+KIw9s5AAS76y9QIzCiG6GKKrCl5EXFVXbt6NEIiqkVtd7azOx6Nx7N1ufvnr+9OG2ZKA+EAqCQgYkIiaoOO7n7tN7+5OD1eNOv1Kvb9OoWwKqpqTUwR2VWMKICgohFiSiomNkBDxs5hjBFV1ZgJlB2QCDEzGiHpQwAki6YZpBQdWo7HY4wXs+KiCVTykMGqXevp4SEhECjakAPYR5uvEHOSKyn/bMbutkMhYJQ7Nj4ywXfRnfoxocdP2wz32PaIAbLflsvJNAPcucmdEJmIAAhh+MUAL7pALWMKJoLsnMYYnKiySEJGAGJCFWIwtRQSioqmkLDrGjQzYO9xNB5hPR4NfckIAD0YoYUuaFyvj53ZaPL5n/zx7o3f+C0mMmU2YlIiNJMEmBEZXM4XeH52zimJIgICqUtKO5yUSCICIWOIF8NuF+3RpprHVU0AQGMYLtkGGFFzx192z2JnZ2fQtR0ZguvUZhlXR9zO8m6bPB1zRrbUYowBQ4iSRJCJiIjceDLxxG5MzLPJzs7EqvHnjfilZ3ampzq0WookzFMliPM2TM7v3T08PTxYnhwcnPVdt2jb9lxiXLP3G0JSZgrsvQCiDSEQoiE6JBQwmp+fw3KxRCTyPcCM8sQKITEW3kNRFts5WgQziDFAiklTigKNcVnVBACoKSFabvM+OT2zvg8oaoAgOdZReaT5tm0xUwbk8aI1OBcyB3BlK/34iHnozx4CdW37KL6Whx06+bIRzLbTc7SM8TogsWMCQhkKKGZiBjG7WBNNbV2WREz1wdGRmSmqCOJQ5BYVbdtG52dz7LqWiBilqm8xO+ei6OpsEeF0bgXa0oYiBDJZVdVgqlB77hyNTu3Hf/or3W//k3/AKaHjTPwQQoCjo0PTvkPJ8wWgKoiEmJR3utVpIOd0Oh7DqPTgiNVylVpikrDquv786OD91eG977/03O3Zu++915R1bVn4BRZnp8BtAyH2KKKQZ3URCIHmBs/L4vTYl6XsjkdQMOeyn0ESE2ma2N87OWrP33/nm6HvW40hpJSEyxJG06lz3ntNaXfn5s1pNap35lb8uVduXt84dmCmmCTBpllj3/XUB/Gnm84f/N5vf39+dDgPzWbVd91cU5pLSktE3PiyQOd8JOaU61wKYAgKauvVCuZn56i5OoyrkK7HzXLpnNedyQhK9sAiqutW1TR2McZV23fH3/vOGzH0/XQ8dscnJ8bOqQ6w+XI5h2XT5goz5tYQQgRVBE1yMc+M8NCImxloysCCqGQXoKiIwKYIMrRwXGr1xKe05Y/tBfqEEEgG4d9W9dRy7GsQVMvVeoXt8f37ZVnKbDQGRtAUY+r7EJuu75dNs9qcHt198fp+/fXf/d2NK4qJiqpKsj4GaDZrWy8X2HXBSYyCTAREI0mJ+uN795995mbB1ag4WTcaitGLNcR7ZCZDdGXIzkTFHFEoy9J2X37tC4u7332DmImIMIYeurZBUgFJAvnREQiJ1BuEruV4fnS8NGiv7+7iqK4AAZOZRlELFPqmbNYn129e9yiJ1ssVOucVAE1FIYQeoqMBCs1hEyGgEmHqIyzvfu+EnQttUcS92ZS8c2qqUQ2CiXSubdeFxPnUc7ssirhZrxMx02Q6LYqiGFeTyXQ825m14H+2rIrp3myyFBWbn5/D+ekpAAI4Ypy3/WRx97vfXZ+fLdZnZ/O27Rax7+cxhHUS2SBiWxSlJ8eJmLORkgRRop2dnkG7adA0g+CEyJIStGfHPfTNYoXU3tjb5cJ5RYRkZkFFe+77zQik+cLnXqkPDo/8wcFBO4QtmpvpljB2Q3eeElgSUCJQwNxh8DjqHk0gKrlz2mQbJikzs6na47iQnubrM4VAIAbAeRLPzCCJWB862mwaOj4+ofWddxsA24zHY722s0PeOQGzUKh2kxQ2t28942PbnKwXc5vt7QshmorY6dExkARMIaKZKVB2qwaA0re4OTncLFCbuq5xfXLaGtEDfe5zPzlxdIBgIknBV4VJn8DQrC58X+7s3fZF8a2hdYI1JRiKZaA2DMsagJiACmGKydbHR6u2aRbpfNq//tpr46oshckH51xiGnftZBROjo9PD46PT820M7MKVEWHJFJMMSfCso2PEcFAUoTYtWm9Xs4PmnYx/uJrxe71684VPjrm5Jh72J22p6Xrj9EcAdB8sYij8RiKqioBaWe2uzspq3r3PNGf+fFnbzZN38nyfG7r9QrMFNEQOpOyazft4sH9o/nhwVnbNMvQd/OU0rJr2yUxN74ogis8OOeNkBQAoWtbOD+bU9/1BAgKBGZibIBoKpBC0PXhwaJv20XRPQsvv/hC6Z1Pjjk65kA47eeVl5Pj47Pf+drvfDieTCtETICU5y8kgZLLMoQ6JLUGCmia0rYF4yEKhHnQxpKAqpiq5E64jMnjQEfxEU4h0U+nDZ9aASQJoCkO7euYVKFtNrhZr7GLEVOK1q2X3Wa1Wj7ou7MbP/3Ts73RPjvHiZ3r1uv1crlYHH/v/fc/jH3fIUCxrUKmGMAP8AVsR6JyXw2mJBC7Nt2/8/78xeeeK9v5WevKqu7npydub388pmIlmsypQEwxi5yaKEBVlGVJiIKInId8NM8a6IB4gNKQz4BKgmazCYuz0/bowf0TBqPCuR4RGxFpYozrtmk3Z+dn88Ojo/m1W7ccOR4joYKqbMf60AwlT8RlFFEBNUVIMYTF+bxfr5abX7t37+6/9Af+QK2mGzBrVLVpm2a5Wq0Wb7z55oOqrJrJ7k6c7e5yPRqNZ3t74+lsZ3bc25+bTWvoNpvYtr2FvrcUIxARICEtN+14/v13v9Wtluu2bdYx9BsVWZlZUxRFV43HcTqbyWQ2M3ZsOa8x6JsNpLrMxcg8gsfDrGWGIEXSerHoN+tVc3Tv3rHFWKvKRlVbVd2kGDer1WrxrbfeOhhNJsEV3ghxQoSqkgDMcFsPMCNLouAAMPdgCSAiESKhc8TOMTmHiEjbwSwR2TY7GubZ65wf/Av1ALm70jKenqzrOlxt1qASCTHDWX3XheX5WdNsNpsP7txdv/3tt+aqspKUmhjjJqbU3D84mO/s79eAWAKiqKmZZTjELEMIMvSlAxJoStC3bQhN0zU7s7BeLNvRVCOFLoLBCGDotkwJ89gfACH1Bngd2ZWMEEyVTRKKJBiK+xeZeS6tEKgkjTGkFGLf9/3mG2+8cRz6fhVjXBNRC2admQViDnvXr8dqNKocO8kUPTZMXgEo6ABX6zD8rqYikFLSGEMf+76LMa6++hu/fifFuDHVNRJ1KtIZQDueTPrxbNbv7u/jzv5+5Zzfme3tTY2L55om/tTNqjxsm1ZERGIIYCoIZtB0YdLNz87b5Xy5Pj9dxRB7Lop1hdj4ouhgNkv1eCy3X37ZRpMJmGruRtjOf0DmdcptJbm2DQo5VxJRSSmErgshhs1Xf+PX76YQViKyIaJWRHoz6+rxOE53dqSqa2bvlIgkqYKJADCCZAMBqpJ7QBDVRJDZkfee1cw558Q554nQJU0g+ct0aPwlQDAyMLGHCfSl5LfvOvuRKIAlyTi6IsYQaLPeaOoDMRGiAYsIhBhD33bdZrVa/do//bUHbdOch7Zdimqjqt1kNpNrN2+qc84c85SIUhIxU0VgHvIfNFAgJHJIwEMvfdhs1t133nnnHJHKoiyjiSYzRTNDUUXrO5MML+ReXlVAoiLPB0CGa00BAXPRf4A4iZ3h0AzGzIkKH71KUqIAZr3zvnPMAYgimiUuijTd2bF6NIKyqoCdU1GF7Mo1l/6zAhggoBqhigARCxMn51wEgMhEwTnXIUBPzkVCjIiovix1tr9P48nEOV/Mdq5dG9Xj8fS46f/dvdnOYujBSaqmKQY2MCNz3IV+snxw97uhbxsRjWVZ9M5xAjMkZmbn/Hgy8aPx2JdVVcQQidkRgFHG2yUnlWYZttcMtthQH2AmIebAzJHKMjjm3sw6ci4AQEQAqepapjs7Utcj9EWpzJwHq0xMjQDNTHMBAfLNoYkKsGMuysqralHWtfmicMSOZQhzcsd6RpIypGegmjDXZlRUzUzERMSesrfhyQrwKObjwYWhqECzaVBSJGZGQCQQxYHjMkpKnYqsVWQZuu5svVotAaAhotC3bfJFQVwUDpACMUcdenRyczjnPgsyZqJsV5OYpBQkpS6l1BdllQAhqmnCXMxFMyBVS2a5ARnpAl7L/J8GOPSc5JleQGBmIGLDAcs2USuq2sajCIzIKUldVlUCAGNmP6yVvPehKMvE7LwvS2LvKOWZiaE1NR8XIZmaMjKAiQA7B/V4DGZqoe+9qo5h4AcEos577wGxL8uyqOtanfN+PB6Ppjs7k0bxy1HkhdlkfKZ5WkuTJNCBl7Lputnm6P4HkGIPMcaiLBMSkqpWhDhDImDmwhdFF/s++qJwiFARE2/Dk23XLyKacwwxxMyTZLkXqxqNIaZkoe8LSak2gEQASM55wswuU5ZlLIoyIVHhy5K58NlwZlQMRI2IOWEeN87ztSLgi8JXo7oExGo0GlNV154IC8j1ly1nEKgacwapKbMDysAkJ7k8NFSTPxM36CeGQCn3w7QhUIrRCBkVNZdxCEByrJcAoTODRlJaxRiXktIypdQAQF9PJlZWlS/LauQKF5hZVVJmk0AiJDCX+Z5wmCihnDBlxAEAeiIEJBKRJGCZzGHopc70VrmHFDTH5MRMLCqomQIdiYgHoQZyLgPzme/HZjs73ntXTtKsMrMRsxNkBuecRwCfRBLkEldidlx475jYmQradqpfLaPl3gnENKQyAsQMs91dX1ZlZWY1EiVCEnZMxOwAIIJBaQDGjqWuap7s7tVVVe98uOz/9DO3brUmmdvIkEyjICKZmBZdu8Hu/OSsJOrryRi4KJypeGYeZTJfB4jgDaBnZjE1LKuqZCJviKSSYNv8j4jgfAESo1KufYCZwmRn5nxRFCmlAglrBFT2jpxzDgxikhRURNk58c67wntHAF5VcPC8OCB2hEjDPDmqqYBznoqd3RESSj2ZhGo0wibqPjloCdEAEUUks6Hm2BhVFFRTnkdWSWamKUbDYU75B6FGzEy9zl38EBGZqEC3aYCR0AaOEHYMCISmgTLZDyQiFkQISNQRUQMADQBsACBWdQ2z3V0pqzJ6XyRyTqxTAzVkynRaBmAZukSypAQ59xBADKAWMJfcchY00IggACkMzDoG9tB1GwJl6DYjEFnPDIDAzNg5JDBIQ9GF6tH+bLJTA8AuMrVE1BFxT0wRgJKaiKT8H4XN2+R8BQDORAnyzDRqpkXcpnXIzuXyvS9nxWjC9R5OEekGMrdEFIioJ+ZkBqImydQEJd0pHXZVXVeHq+Zf80U1Go9HqxhTvkrKFpSZcb1qdlaH9w64rGp2DiajSWVqU/J8DYlbZu4RqQeCoEmjmCbqNm8Rc2GAhYryForELe8VGDI5AhooJVTBT2Y3qp39ERhcB+aWmTskikQUDEBUJWrSJCqK3eZt532FRKwpoOowO5LfxTD0AuawRkUNivKac75G5/bUF7NVwnGP/rXb167dBzAcRjsxmwomQsaUgm+Xq0XK1bcUY0ySkvZ9b1eE/pFewT1d4qsmIioipiK22axhOp4QAuYJKhy6IQFAJJkBqoElQEzO+4iIERB7AOgBQKrRyHauXTNEjKompiqSPQAgEZEpqBkSIjATifI2rttOanUw2AEVE1PJnHqgCAhENlC6Yd6fmRoRa1IBMwVCIGZmyUkzmaoZodVVtal39vfHdb03KkvwjgccCg2GecsgSTddyMQSaiBhfFSE9X8PAE5MAEQAEZAZSR8SQYGZUln4hm/e/tx0VEPhPTDRll3HDBBEVLsYoQsREAwcYgnt8q8SU1wv2595+dnn4yAvEEMktR7sokcraX3tmWed8zAbjbDwDnhA0yBHhJZUdNMFiCkBqJmUE/Tt+V9BsEJV2IwyUzwJqaoLXWtmIATEhfNpcvO5l8ejCmrvgXkgzxvCDVGDLkVtuh5Q1BwABIW/TWRvaxInQ6vDwHyEliQXhs3QsevKqpqV0xc+PxvV5IgA2MmqC+nmZHwfATSlRIwI6LNRZGbeNE0Zu3YZ2s0ytF2rZp2JpBijwENI1Z4UBj1RAYgI+q7buikxs6QSNfUBbJxZy5E8gBkQEmqmLDeVJGAQECCaWcoD37ktGgDSbHcXvPekokJMgohJNaqJAhGjgREPJHLkHEKIZJJsiO8DOw5gmdhJU1iFPgzDmUQMhsADORNifuuLqozHE5svVzrwHAEREaKh5qnvPLEHas8999xZURRYFCXe2Jn62ntHhKBqsOxDWrSd7saIKomaTeM+eO+9aYEwBTCQlNCZgvcFWugJmBAUyHIpGa9fvzF37NEVBc7GI7c3HjnOBKjYi9jxqg0h9IOXArz7/vcx9fHHmbv3Mi1NnuRUVRo4UpEIDI1gf29v7pwDXxRUVjXsT8fFpCwdI4GCQRuTnq1bCWGgdjTFt7/9zX1Uu16z66TvURWBHJEBZxzLzGgIN/b2r62u37iO5Aqo65KujcdFyUSQOUfhvGnTqmlBUgRVwbPT03pzpl9Cdu/nhr+YwQcCxMxlR6YC7AtFRLz1zO2TonToixIHo0vl1DD2PSaJGWQBBGRCZkdmhqfHR9Pj97/7m/1mvQgxtDGEJuY8MUFm8rDHJb/b33+iB/BFYSoqGXWwqJJjnNyHgYSWZ28MB+1WARWJIilp7muWAW/cbkiJCJnZJEkytai5kqhDxw0yOXjY9reddleQlJKKBiXrRIQyiWI669oG8xgi5/gyLzIwHCiIarq5vz86XyznZgKERMyMOVpJhMiUkY/8nMyEYXA0F2HnJVtQAxHBlNIWWbIcsguw98DOq0qjZgZlWZIvChARM1ETM0sDDp4VJdK62UjTB93S0WsemCfRdFHN15gMCdk5B2Bx4AXddhEhOeQ8GJU7BzLBixrE0NPpUmXpewFkGJQzry85Rxn6noHY+XJUr9Ztq7DtKmGHjpEyumKQKVgExRDBAvQmcBhTQCIEQ1BTkBjya7KGTh3M1tLduH5LF6t1noLMKBgSKZFnLcoJiV6wBqIZYIoJHCM5RhBF9EUF3oqBB8IQCUFS4gcf3h23q/mDdr067Vareez6Vej7pu+6PsUYADFdIse1z8QK8f6779oLr7ximskuo6n1Ipl6EJEQBiZfuESuPGDdQVWDZoYDISIZ+FkEAOz89NRCCCqShNgFU+1EdDu8OnhWutBXyyx1FmLoVKR74cUX/P3j47XEpFhZryLbrWRPgJmhT1UBFaIi0bgsIak0JiZD7kJMzsgoXwwOfF+DRKoq9l0Asy7DSRmBRgADV1RARGbWganB8zdvXmPmzYOTs+ymMgqHhIzCaGw2/Hu7YFoWEUpJtg1fmOdO7HJDpKkK3L62v7szHu0ezD8Y0h1AJgba2h6Rh8zcF3w+BilGTDFdYONicMF0PTTdEKhCXRfF6y+9+PKvHRy1lo3GoEuZ1oXIwIyHjq5M1ZGSYIjNtvo6TAvi9rIy7CsCoIqv3L798htvvX1XxMQyugpVPSZCRBU1dDYU+/NDM8sOoeU2MmQCNHAAYND1jTs/OymaZlOujh+8eXjv3klcLY/azeY89t1cRVax71tElNC2ckkBPnUSbNtcqGtb7fsuIvLGzFammsAMTg4P6u3h2sWveYQgxLSKfdgkkVbNQowxxb7fZuXmnLMYgkiMgdltwGCdPYzi6dHh6CFD06X+VbOYYmpiiuufeP31/bv37x/E0Adsm++kafi3z46P4WNvd0GA8WQSpwV/wRF9a386hdOo2qyXZbte+ktUlFeOBoc/39K/4LY7F5jcVQ7+MK2rWVmWTlWjqsDR/XujPMf80SO1SxyI9rjXN6ANJPMGTIiMWNTOjbxnbNYr36xXfnsuiB/lR7ygYN/u90pjJF460y3P4/XZbI8MBAGWqAanhw9GW4nc3sHDy8Ur+7eP/vGVNjTPTGRWPn/zxt4HJ+eCCLCazyf20VdQXcgQbaEM2J7B8G6zFFkkeUcUumb94eHdO3dWi0UTmvXxan7+YDIerfam0/jWW99ukKgPbRsHOhT7QTyAsXO2Xq00pRSdp1VKsQzd5p+Hdq27k/FO4bgCNR9ixOV6LeeLZX9w9/vvhLZdhBDmklIT+76PIWzdkW5fWNK1rSBAbwbLGEMRus0/T32jO5PRrGRXgVkRYoTleqNni0V/cPe9d0LfnT9/65YeHh0dvfjcc3p8dn4+qkZlbNZ/w+/v/MKoqsYE4EUSt32wdbNJqNYXGk+9Y7u+u+uWDw7/EYXutaoqS58noYrM1YRs+S0rRsOL6TBDb5anGdAGFkWNMWrb9yGKxF0H73siLoncXl2eIME/Li2+5B0XTFwYmAOzQWuQIDNbD1wLqJgT9mHo3ExUVESTAeh0XJ06TQs0pf3S/3rp8JWh2dwhgkdANjACNbpQMESl4XVnsKUUpouXr6ikpG2Mseu7uOPx3cr7kgHaZ/b3xsfL1S87CT9ZFr5k5hLAGABcbmdXwu3es7vP8GjO7cA0z7vGlFLT9TGlFHZKd58AeDaq6wL0LUidlkVZFt5VhOQAwYMZZVKFXIoZiLgzFwKYCWGKqpu2bdabzTqslisZOW4ms8kxTUfr0csvFXfu3GnvvP/+SQxhLSJ96PseHg2DfroQCIdXj6pZ/1Nf+lIqvAfP7kC75ltJ4340m0pKZQyB2raVsF63O94fVzvThbabdbNebVJKYXgp3oVG+qKwZr22qq77L7/+YzKeTGw0Gh1a335LLe03l9bt2lbSet3uFP7k2q1n2udv3aKjo6PD3b09uXH9hqun040Sd9Y2b/dtMzPVOqXk+hBM+l584eW5W89CVZThhZs3ICXp1u363RjaKgGUYFaqqlMzZ2aZTWCYtxlCim2cbkO3lopISikFA4i3b9xIN3Z3CAH4888/Hw/Ozk7jah4SYAVg5cBa5jTHEbhdH4ecCIm2jAND3wGomSUm0ulkHG/cuCHT8UiuTcbtfDn/rog6ACvMzGfG5bzvYQgchnUfvfdMS6NJJIpIf2N/T56/cQ0Kx/i5288aI4TNevlul7lHq+EZfuDYuXo2D/eOW/IsE8mH0wNAeOm52+KZdG8yKb/w3O3mfLV6J7q2TmClmVUAUGyn6QYWB4DMBGED1YgOVOnCpnGvrrtnxuPWTGPserlz987pW99/78HR8dHBgwcPTiWlTUqpHWQtXQ67PzrZ/ilg0KP79/WP/8Ifwb3JGKbjCb/6/HOLqqpOY4zSbJp127VVDNHHFEFS6g8PDtb37t9PJZHc+/DDpam2se8vb0iJCE4PD+2X/uSfhN3pxG5cu0ZfeOnFxagenaWUZNNsNl3Xldt1U4j94eHB+sN799r37969v1mvzxaLRXzttdfqW9f2q5s3n2lGdTXv+9D3IZQxhkKSIJha27bN6dnZ/DunJ6uyKvXm7t7o9Vdf2VHTIsZYpCQupeRTSs7yWCIjgBGRItKFECGiZhCCbKACTADQn52enbz5rW8tmChOp1P+8qsv75VllWKKLuT9FylGp2o+s13nXnhENCIGzJXL/BxCYERlYiu8ty6EVbNZr/r1Ot2YTfyrzz07TaqYQuSYUplS4syCJmRqNLyZDQlJhj3n5yAOrSEIRKRMKN55WSwWJ9/97nfPzawbjUb4yq1bs9lsZiEGF2P0McYyxsQicvGMIbnRAfq+2PvF2RgIMScV2ZyenZ68+c1vrsuiCNd2dqsfe+Xla0BYhxCKlJJPIRYxRScinMcqMwtg5pHNYrp9f56KpPPz88XR8fHi+PDw5ODw8Oz46Oj87OzsdLNeL1R1nWJsQt93Wzl7hOA/9UvyLhi1/syf//NU1bW7fe3adDQaTUZVvesc31CRXRHZ6fu+btvWtW2ry8WiPzs/X52fnc2Xi8X87t27cxVZxxjbdrPpASBukaCv/PzP47WbN/mLr746nk6nk8lkslP44rqp7CaRnb7r665tfNO2spjP+/P5fDM/O5svl6tl17WrejTSm888A88++2x97fr1yWg02kXAqapMYwg+hIBN26XNetWuN5tGVaNzrp/NZm5nZ6eqqmqEiBUgjky1SCJOszXanoPhBU6fhWkwcUlVUwihb9t2vVmvNyHGlpnDZDqF2WxWjsfj2jHXADAR1VJVC0nJWQ4lhvXp4fRfhkBURBUQJMbYh5j60Hdt13W9YxfLqoTxZFJUZVU6x7UalABWbNmgVYeumhy25YFguHh3BTwc39UU+tD3fde0bbtumqYBxL6qat3d2y2m0+nIOzciopGaFSKSPWQSvjx6+KizUdUYYwwhhL5pms1mvV6nlDrnfZrNZrCzu1fVVTVipikSVSpaphT9QGWID1+coqCmJiLS9X3qmiZsmiYuzufrxXKxaZummZ+fr5uuazTGTUqpQcR2EP4wyNnlsHurAHpVIT7JAxggwte++lVh5xpmjimlxjl31rdtrWajlFJpqqyqHLpOkohoSl0SaVMILRJ1XdP0l7RSAQCc9/DWG2+k9995p/HeB1HdOO/PQttWl9Z1qkqh6zRl39oTUZ9i7OvRSB48eKBvvfXWgpkdMRdmVolIqSJ+CGdAcgejiEjwRSFEZOwcEbNDxAKyi/fI7AZ2MbrUXrvVhstZvubCnURETCoSht9HXxSZunA0ciriELHchiqE6M2MJNPLX177coasJiKAqKoawUxyu4ck770578EAiImcqnozc4jozIxFhB/1btCrVtBEkogkQBRTDTB8Bl8UMtwLEbNHxNJEnAF4QPSgyjJUuT9iTbPwX1jp3K0gCQGSZCQwIVEoisKc98TMjIjldv+q6hHRgxmnfO54aT0ZqsYqw75FJCJASCl1EmMPiCGG0A5F1jQIv1wS+Kthjz2tB7jsCfjl116jzWrFfdf5sqq8pOTZuUoy5TiHzB6hgGip7wMgxr7rtlY/Xk6CL22Cbr/8MvVtS7HvXVFVhYq4R6xrgGih7yMCJCAKeOkN6vVoRKbqVMQ77wszYzOjGML2FTmYu6tRBjHGoijYssCzqfqBC4ovX8BHBk23gjoQdhGixBAiIAoSKUKmNs+Mo4auKHi4YAYzDwA0EIzRx9a+vP42vkbUGELKZSOUbQNN4T0ZAKsqIQCbGQ37pos4+orw40cVWRFRU4wCiGlYWwjRDNEu7Z3NzFmO//lynnH5heXwiLNJMUYEkEedDZih995rPncHZvzY/Q+IdIrRAEBSjGlYN8UQLlv6MNxzumRo5TEo0Ed+fVoFoEu/0uA5tt986e/h0sPlSiLyKG2kS7/SsNaj1sVLynN1Lbi0N770fZUI9VEvUOZLz34Si9jV+FEf821XDcelZ/AT3wf60bXh0npX3ThdWhuv7P1JL4a2K3u3K2d6mTcfr5zj1Wc8trL6iHXtqtG7ct+P2z884s7SpXUvy9ZVGXtc4vsxL/A0CgBXlODy4V/+AFc3ffnDy5W/exx3y+PWxcfEcVfXoCuMwI8iRX2U8uFT8MjYYy5FHiMM+IhzexJN3+OQisclcFfP51GkUI8Szqtr61PuHR6zf3uMwNqV+7ZHrPEo4cdPUCy7olxXLb18wlk+lQJ8khJcPaRHae6TNPBRlwlPse4nDTp80kU9jisG4WneBP1IssgnKvYnCc/Trn/17+kxv3/a/dtjBPeHsXd7jMF40rk/7dnrExTNPsF4PPIsn0YB4BGH8VSsW5/08Mdwt+AT/uxpv/Ap6PGe5t88jZB+mr18WiWDx1hQ+IxnYz/A3uEpvBd8BmP1Wc7/acIbexr5c5/wMPyUB/Y0CvCo9e0p18HPcNH4FEr3WdeGp1Bs+yE+41F/h5/xTj7L3u2HfDafZm14QijzJKF/otI/yQM8yXo9rVX7QSwOPqXl+LRf+ENc037A5/4gz/lBz+FHvXf7Eaxtn0IZnkr+PqYAz/3hPwb3f+PXPo2lxB+CRfhhCiX+EP8d/gBC81n3YD/k9X5U+8cf4bn8IIrwqUJV95QPw08ZXnzag7dPcL+f9nA+TTyJP0SBsf8PBfKHsZ79CPf+g4ZuTyPcnzpHe6QHAICrXuCH5XZ/FBbz/w9r27+gvduP4Cx+lHv/YYZBnya/eGrl/H8HAN+jmMOjY7pXAAAAAElFTkSuQmCC"
+    Public BGTexture As String = "iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAYAAABV7bNHAAAACXBIWXMAAAsTAAALEwEAmpwYAAAKT2lDQ1BQaG90b3Nob3AgSUNDIHByb2ZpbGUAAHjanVNnVFPpFj333vRCS4iAlEtvUhUIIFJCi4AUkSYqIQkQSoghodkVUcERRUUEG8igiAOOjoCMFVEsDIoK2AfkIaKOg6OIisr74Xuja9a89+bN/rXXPues852zzwfACAyWSDNRNYAMqUIeEeCDx8TG4eQuQIEKJHAAEAizZCFz/SMBAPh+PDwrIsAHvgABeNMLCADATZvAMByH/w/qQplcAYCEAcB0kThLCIAUAEB6jkKmAEBGAYCdmCZTAKAEAGDLY2LjAFAtAGAnf+bTAICd+Jl7AQBblCEVAaCRACATZYhEAGg7AKzPVopFAFgwABRmS8Q5ANgtADBJV2ZIALC3AMDOEAuyAAgMADBRiIUpAAR7AGDIIyN4AISZABRG8lc88SuuEOcqAAB4mbI8uSQ5RYFbCC1xB1dXLh4ozkkXKxQ2YQJhmkAuwnmZGTKBNA/g88wAAKCRFRHgg/P9eM4Ors7ONo62Dl8t6r8G/yJiYuP+5c+rcEAAAOF0ftH+LC+zGoA7BoBt/qIl7gRoXgugdfeLZrIPQLUAoOnaV/Nw+H48PEWhkLnZ2eXk5NhKxEJbYcpXff5nwl/AV/1s+X48/Pf14L7iJIEyXYFHBPjgwsz0TKUcz5IJhGLc5o9H/LcL//wd0yLESWK5WCoU41EScY5EmozzMqUiiUKSKcUl0v9k4t8s+wM+3zUAsGo+AXuRLahdYwP2SycQWHTA4vcAAPK7b8HUKAgDgGiD4c93/+8//UegJQCAZkmScQAAXkQkLlTKsz/HCAAARKCBKrBBG/TBGCzABhzBBdzBC/xgNoRCJMTCQhBCCmSAHHJgKayCQiiGzbAdKmAv1EAdNMBRaIaTcA4uwlW4Dj1wD/phCJ7BKLyBCQRByAgTYSHaiAFiilgjjggXmYX4IcFIBBKLJCDJiBRRIkuRNUgxUopUIFVIHfI9cgI5h1xGupE7yAAygvyGvEcxlIGyUT3UDLVDuag3GoRGogvQZHQxmo8WoJvQcrQaPYw2oefQq2gP2o8+Q8cwwOgYBzPEbDAuxsNCsTgsCZNjy7EirAyrxhqwVqwDu4n1Y8+xdwQSgUXACTYEd0IgYR5BSFhMWE7YSKggHCQ0EdoJNwkDhFHCJyKTqEu0JroR+cQYYjIxh1hILCPWEo8TLxB7iEPENyQSiUMyJ7mQAkmxpFTSEtJG0m5SI+ksqZs0SBojk8naZGuyBzmULCAryIXkneTD5DPkG+Qh8lsKnWJAcaT4U+IoUspqShnlEOU05QZlmDJBVaOaUt2ooVQRNY9aQq2htlKvUYeoEzR1mjnNgxZJS6WtopXTGmgXaPdpr+h0uhHdlR5Ol9BX0svpR+iX6AP0dwwNhhWDx4hnKBmbGAcYZxl3GK+YTKYZ04sZx1QwNzHrmOeZD5lvVVgqtip8FZHKCpVKlSaVGyovVKmqpqreqgtV81XLVI+pXlN9rkZVM1PjqQnUlqtVqp1Q61MbU2epO6iHqmeob1Q/pH5Z/YkGWcNMw09DpFGgsV/jvMYgC2MZs3gsIWsNq4Z1gTXEJrHN2Xx2KruY/R27iz2qqaE5QzNKM1ezUvOUZj8H45hx+Jx0TgnnKKeX836K3hTvKeIpG6Y0TLkxZVxrqpaXllirSKtRq0frvTau7aedpr1Fu1n7gQ5Bx0onXCdHZ4/OBZ3nU9lT3acKpxZNPTr1ri6qa6UbobtEd79up+6Ynr5egJ5Mb6feeb3n+hx9L/1U/W36p/VHDFgGswwkBtsMzhg8xTVxbzwdL8fb8VFDXcNAQ6VhlWGX4YSRudE8o9VGjUYPjGnGXOMk423GbcajJgYmISZLTepN7ppSTbmmKaY7TDtMx83MzaLN1pk1mz0x1zLnm+eb15vft2BaeFostqi2uGVJsuRaplnutrxuhVo5WaVYVVpds0atna0l1rutu6cRp7lOk06rntZnw7Dxtsm2qbcZsOXYBtuutm22fWFnYhdnt8Wuw+6TvZN9un2N/T0HDYfZDqsdWh1+c7RyFDpWOt6azpzuP33F9JbpL2dYzxDP2DPjthPLKcRpnVOb00dnF2e5c4PziIuJS4LLLpc+Lpsbxt3IveRKdPVxXeF60vWdm7Obwu2o26/uNu5p7ofcn8w0nymeWTNz0MPIQ+BR5dE/C5+VMGvfrH5PQ0+BZ7XnIy9jL5FXrdewt6V3qvdh7xc+9j5yn+M+4zw33jLeWV/MN8C3yLfLT8Nvnl+F30N/I/9k/3r/0QCngCUBZwOJgUGBWwL7+Hp8Ib+OPzrbZfay2e1BjKC5QRVBj4KtguXBrSFoyOyQrSH355jOkc5pDoVQfujW0Adh5mGLw34MJ4WHhVeGP45wiFga0TGXNXfR3ENz30T6RJZE3ptnMU85ry1KNSo+qi5qPNo3ujS6P8YuZlnM1VidWElsSxw5LiquNm5svt/87fOH4p3iC+N7F5gvyF1weaHOwvSFpxapLhIsOpZATIhOOJTwQRAqqBaMJfITdyWOCnnCHcJnIi/RNtGI2ENcKh5O8kgqTXqS7JG8NXkkxTOlLOW5hCepkLxMDUzdmzqeFpp2IG0yPTq9MYOSkZBxQqohTZO2Z+pn5mZ2y6xlhbL+xW6Lty8elQfJa7OQrAVZLQq2QqboVFoo1yoHsmdlV2a/zYnKOZarnivN7cyzytuQN5zvn//tEsIS4ZK2pYZLVy0dWOa9rGo5sjxxedsK4xUFK4ZWBqw8uIq2Km3VT6vtV5eufr0mek1rgV7ByoLBtQFr6wtVCuWFfevc1+1dT1gvWd+1YfqGnRs+FYmKrhTbF5cVf9go3HjlG4dvyr+Z3JS0qavEuWTPZtJm6ebeLZ5bDpaql+aXDm4N2dq0Dd9WtO319kXbL5fNKNu7g7ZDuaO/PLi8ZafJzs07P1SkVPRU+lQ27tLdtWHX+G7R7ht7vPY07NXbW7z3/T7JvttVAVVN1WbVZftJ+7P3P66Jqun4lvttXa1ObXHtxwPSA/0HIw6217nU1R3SPVRSj9Yr60cOxx++/p3vdy0NNg1VjZzG4iNwRHnk6fcJ3/ceDTradox7rOEH0x92HWcdL2pCmvKaRptTmvtbYlu6T8w+0dbq3nr8R9sfD5w0PFl5SvNUyWna6YLTk2fyz4ydlZ19fi753GDborZ752PO32oPb++6EHTh0kX/i+c7vDvOXPK4dPKy2+UTV7hXmq86X23qdOo8/pPTT8e7nLuarrlca7nuer21e2b36RueN87d9L158Rb/1tWeOT3dvfN6b/fF9/XfFt1+cif9zsu72Xcn7q28T7xf9EDtQdlD3YfVP1v+3Njv3H9qwHeg89HcR/cGhYPP/pH1jw9DBY+Zj8uGDYbrnjg+OTniP3L96fynQ89kzyaeF/6i/suuFxYvfvjV69fO0ZjRoZfyl5O/bXyl/erA6xmv28bCxh6+yXgzMV70VvvtwXfcdx3vo98PT+R8IH8o/2j5sfVT0Kf7kxmTk/8EA5jz/GMzLdsAAAAgY0hSTQAAeiUAAICDAAD5/wAAgOkAAHUwAADqYAAAOpgAABdvkl/FRgAAFEFJREFUeNpsnGmS5LiOhEGKUtQdxt5MW9u7//kyxG1+kB/oZFaYtXVlLBIXwOFwgAr/9+9/e+/dSs72fD7We7fWmrXW7Louq7Xafd9mFqy1arVWSymZmVkI0XJ+LYRgIQTrvdt1XRZCsPf7tXhd1nu3lJLVWq3ValdK/v1aq5mZX6/3bmZmtVYLIZiZWYzRaq3+2XVdY3z89r6t5Gzpvq215tfmv/f7tefzsZyzxRjtui4rpVjv3UIIllKy1pqVnO1+HiulWErJSikWY7RYa7XWmj2fj99AF4fBm42FMzMrpZiZWc7vXLwxcD6rtdr9PBZCsBij5Xcs4pWSD2x/jYnwmS4G9+JavK6U7JqTY9FTuq0ytvf1efXeLcY4rzu+F2P0jdPxpjnGGKO11iyxw2ZjYDlnCyFYydnC/FItZZswE7nnrrHLWAM77lY1b8qit9Z8EGNRhwXw2X0/lvNrtRSL1+WDHddIFuPllqsW68sdgkUsbW4qlmI25nhdl+WcLaW0bS6bw/cTrtJ7cxOctmtmfUxkLg4vFoV/8xsWL8boJs5gcB0s4/1+fWO41nK9Yr01CzH6Z8uaxgR1LCEEd7E0x80kcfVaq1vX8/ljpeR5vzF37oF7997tvm9LYwDd8vva/TzTZ/84JrCiOhgmw9/8lguXnC3OneV7ik9mw91wH3YrhODv6e+57hjrstzeu0/6mlBQSvbJ9t4dV0II9nw+c6OKf15rcUvFQ2KMjlmRP8J0kxCjlZKttep+zEKpeymoYoXv9zt8+77nTpqldFubuxLj2KH3+7OB87C+y6+Z0i2LOTAK6xtjaz6O5/NnA2jGWEoZ8CCAb/Z34A/g0VxIAlPO2eLw+XuY0xwYF9CIU3J2f2bBhnsRgRbQx7nI7Fbw6DHcLYoljV2sviFcC/wY3xuLxsIwDu6DS68xXW5lGvlw8/y+1mpd2Naa5RnFCSjuuvj4WM3urnQCcLrvzYVqrRPoXv89EwxzwAxcJ8tAdZIO+tNN+T4WxnfZVY1+umFqkTln663ZNcc9POW1+362sdz37SEdowAOWmsWB5fJCwMmqA53uTYQZSJh/o0ppvt2c72fx+779vDOzdXqCAa4leKbcpla68ZZcMsRvZKZ9d0KJiTgVliqRsxay/SWxb0YX5UoxgbFWovfvLXm/nw/j5kNEAM4NWSOHX08NLfWLApvUXzCUs6Q2lr13VJ6AN6wMAAqvyOw8G/u/Xz+eCRTDqbhm/BeSrHrSnPDLt9cxtdaG9e/rrS5AzutIZndZDAr8tTJS4ZFMNH3+x04IJFNI5RbYgjOiBkUO9d7ty4ujmUQinXBFonszqGuayy4RmSue9/PhnVmi6OZmdVSfC6x1rL5MUie0v2LkuvirZXvHp1YdUifm/rcSYA2xugL83w+Vsqw0vt+NowIQhDVTdhMJqFBhPlAJMFIIEGxj/soi8c1wbjIl2O8PKep0/wV9Mbupc18ay0DDHtz3MEdyJeUlef8zoFEu5/HMYN0ZUyue4pz348vhKYdI3qVjajez+MbwrgZz30/zm/G+Nq+wJIOjVRkGMP7/bHwP//7T1cGjSupRSlpgzcpWcMF+8QC5xfCvmGmGqqJSn3mTHtkatt4MH9l1rynbsm/SUBh4x4E5m8INEQxMxsbOt/3nGzcLHn41IuRR2kCqeEUgNUw7RFPXIndgrzFGK0L3qS5UCOa1pFqiFuxSHA0kk442Jb2zkio46gSSYO4KZarn2FVvjkjEg3/f79fdyXkCc3Uh+9H5xnXlbZIE0L0weHHLHCMa3JEyzOML8kkbRwqCq3ACnpvnjJgRYA393k+n2H982/wSrmSBgYiqRPW1iwu1lrHBUk1hDThl+DNYqd1A773++OD42ZgUM7vwYHGDnYBTWSIWvc0YWBQsk5OJ3oNbkJwGZsahJWPsYBbMcYZzhfGtbmwI1DcdjH2GC3yJpm3IjkuNCJBcN4zTH6C8Qy9uFjJWVxgLEQQHUdVAJJWLFG5FovJuMy649SyhugW8Hz+eBqDfII1oVFhPfl9Pdrx2z2vDDNI3BZXBKnuJs5L6lIQya24QK1jN1htd5VJCHN+N13ovh/fKQaroVhTHSyUyAOHUneutfo9xkTrphqcKiTXwgLHpjTnT5roKlGNp1DExAHPlG7x66k0luX7OiFCrid6KVl+3/nd7oqBy56SgSvGKAnU0E4YHrLovbF5xohlqdSCW3tuWYqHeuau4hrjK6VYxE2USXPDkrO9359hITkPDfp9BZvMfVjzJ6UN8ZBNNad6Pp8NeDV6YrmqJuBqZPjgFZsGbg2Gf/miESEdHyXTv6crtk0Hv9zFwn/++bfvO7Q050uSvdNkMUEiQCllC/m/9eXkAK8iGhjBQIsz+eSFArUEzJ/3lHIobv3OBUdQiQc7VwV0beKSayKaM+YGULM4yl1gy7gF+jG7rVKr5lwQv/WZCmB7cnvftyeUOb9+H8aoeMKGAMK8XyW/W4R1Zf4xXlv+qVIxuZlH2/u+PcpgGQrW6SjT7LlY9IupL5Pw1Y3jRC8KoMsojhXZJCyIe6I555xnBKqbhsPG4WIr51sa8wD17ICuGpKmLSozhxBGmFdBnZuCPWeCpyZbxbqU8heqEdsC5M0FYMv3/QxhyzWouO382NnLiSZcTdOXTR1ozd7vz7zez0YI4T1FvISF1jIXxtF7t6j6L4tFQY4FwIxVM36/P55akFdhXR5OBZOYsHIeTwjJzr00s38353ejGSwMllRPxj//H2L0RLXPheN9QB8tmgg8rrdSnfCff/7t/EEoJNmjiuCRwtOQXWTT5NEZN7qRSLW4Axk9lEJD7Mq1djn2DAhYDJbHvVx7ytnTnLOqotKvkkcvRIrBRE/kZvarkQRdRV2wlLxZgLpeEgu4n2djvqtIWDbxX10ToCfsavkGFzkXB/1JqQe5oCsHCGG1btIvcz3nA7QMkKZiOjGjHxRfk0aEtJRGPVwjFcRKC4n6OYuANayaftxq/SHErfLhrt2aF/vQhzIbOv9fp4yKJTsXQgWYlgrRVN5zsTkinYQQhmhPhGHnYxw1ri7hlUmWkq2UUSKh/KwcyPMvoQgaoVg8XI0kFhZfa3EQVbcbGvleg6O8A4aNJoV3s4yznr9cd0S5PhP1VXX9bMHKJVf1d4r+z+fjsicTOzszqCgQkZQK6GLxN8oANTElbh4EJm7VudN+L79G93GRRKu1KT4q38HywNr3+7Nway6IesK0oGC9t22w6LQanRaQL+Bj4OwubqMC/IkprQ0+8n5/NtnT8zlXC6JXVjyqTYDGek6ruyZEXFeyJgEBAqkNDlgUqgTXWxWbe7W/YI6eJb+vg1zO2QfN7jFx1Xx0IMp4PcTP0LqXe+9N2DcbbgIGDIvYo2WX0pRbs9CTOMdIMUC5XJTeoOrksG653/v9zspIhqA+XhLmS2ryE8nnToaN/jMxFa/y+3p9ihBMIABUKbswOE0ktTzDhmjp6ZRWWRQWlPEQULgHRYT7eRxCXEC7n01qaa06oMdVQ6+LD0xTXyEP4tQ8Otyzs0stiWYmqECt1S2RdpexuNVrUiuvSptEAkjmqSIscWs1ROFSZN4rGq6AsiodqwJ8XcnHAzGsU4nkRZUknnyGlQUU8UVV5fKszQ8wXbInrBROw0Jf1+VRT3MkM3O3631ETKRObdJC0VTLQudmwU7GjvUvj1Alofpi3eKutRbf0BDCoDyKF9SpkE/p7dPioVc3S/FOLwZIDqaaMBPQ16h8XoOLTCyi3M3AzpY7TWqRdGmmOomn9iKuetcitHA48GnP+m0joFFjPpqyd2vk7KFbyzzQeM9twlIKUxo7fj/PJq8O/Mo7vZ89jiiVKqprskrrjMowCPuQT7J8LLxoZ9sM3UW4ztkoqlGXBTezYUG6uqvHB7FsVU1du6bDYrrS6N9J3vWqLrlyq76Vr7GQ9/vdFkLFL53UKUto99nZtKVM/JrKJVh5lrFVllH2716z33AA6PDLumlAZx8hqpuWZviNmqxWS1S/pneRtj/EflUUVOnUdl5dHC2Ng0uUr08Gv1VtEMmkk02tGNoR0ZsVyEZP0LXxHQXBoTy+XsvyzPfADGpUgHVKq5NEy9DP589qixPBH8kDq1WdWoU7ZAvGdVZSvKVX5gFb1v6Ds4ZWSra4V02xmOaWpJmtAhpcBuI4zDtIc9PoJqU0E6Z47m1wghEK2meFBKlFteZVvQgbVrGwWAyaFfhCZqBdIrDr1aan97gteod5zuND6WQlfDfpgVZ346ZgDBMduPV4dUExTl2V3+ouOrhL3w94tHfhhy3H05YdpxOSPpAvalRWzWhF4iwu2CxRI0+TbxCmcb14XV5Hp2tV8y64CjsBcz4LjZe02WI96jKn1nQ/j3eRwFd0kVRoR+wyW20tGsYZ89niq5immKl6WFRwSyI6aUsa5kZfsVl3HXnwndGOez+PsNXrlxDlohVca373/X43IUyBFYlXyz1a8wJoNTXSCdNYnuReXY5UKECfJaPruizCeJE9cJEo6b8eM1hJ5R8ZXHNRfnV6VWfUCOdbshpWW0ua5W+XW6QSQWTV3kPuo9yMCSo1QPPmPtAYNl5bcxhPCFGimI3Kqnaiaj8OiSVFP1p9AfEV3peOTUTippye0aMFQcrYWk117WZ+D7qB5kROSIrBtU/uolFUO3DBzPy+w81E44KnQX5h65GEU48Z7DfrPrBxZOrPZpqr4homEDYJ99IGMyMPHaVrx4IvgB8fcMxbPUO0rGhjhPZRaymIMjbqKKqCR0dRFrU+T3qxigh9gHSR1eQsxN+aktJMC1SnXrtTPQNW/FHaPpqyXndLpQ7cX9vmhusWEe2aU4wh/ZatshFnPyK/Y6Pv+9mS0CqNplwPj9Degff7HbkYNF1P0xBpNAXQDjEinTchHbmMClW4GA0Li4kX50yXdKTBVbAS7rmsdXEhcOnyaNjd9RZJrA72hH8PEtN1izfTL6B+Pn8WkyYsn/qzdpfWrQNjWQZhFHxA+UM3wpry5FpMBNH+bF4aTQvNJ4Skohux6vp7Dc2rtVPbRmcarpQ3TZpDPHyXxeK+07KvLUJpK602E2n4U92Wk0HNa05t2yUtXZ8nF4kWcJnVtb92Hs7VDgkErGJTkVc0h/N2Qilu6otGCZdcXfvKfv9Is+P7/XpjFNjiRylFyz2rH+DR/TwuU57uyOdg3MlZAE4t6o1o2bde59Xisp8yhG6okP+7C3+PYq4WCFHUtCq/78BmLnTNjjI19XUArf5qbSlTMGP1Ecu0EsICL9O/Pf3QDlPMXiejRyrZTXabQBGlw5XIWKR4SDeZnumgcRwSeU0c07MkeMAsOMaNmKnuQ96iJwJVHFP/X3iUNk1GD9pqxq+WSClHT/wpw2UTuC/4oe06cBiaTuOsopzNo1gV+EcEPk8X+YZR4jn7g9z8BUPQfFK63UxhsPxGF5YzWqoxa+5TpRcIzMK1AHp1U8XIPsFbu9/AEPK7dN+bztRlvF0IKgy/SQnL5ZBwtJ9B469pbifn0fRAa/YalrVKomUlxQGaxTnE0nvx/E8jmZaPqGLE+7Hnczm71+S0eZV3JaicqdUjCttZMrKBOSc6T3rv46zG2Xe4H8P++6E3gOySUouG4S61p7OoqImppjZYmC6qboK2rJy9hWfNTt1drcIbz+cp6LMqoh0eIxc7jkgqOVzHpPf6OaRSM/ezzwddZ5+EbT2QRbpPVXuutbgGVeSgreZ+2ke0tcz9BeNYnOugHmwgaoZHtymzzPevX42ZWkRUMGMw2kClO6uYcjZWnvzElQDp/mAz9Nin6kU6Nu3IRy5OR4eabiqLcPZha3+41uylZ+n+1R7rDwQ4ZE1tj9UF9d+JWnjWseBSLrO+A7w517440OtAO8rYn19i+yobZUmA+1ZW0pa6dVCm/TrDqs/pGLQmbKcRo6YMXkKZ+ZDqLoPudz/i5FKo9PnpbnPM/GwPbnIgRcs9enzJXXk+VAWSqBxMFx2mrZ2zqAh6YNdL2EdCjeXtfUpTUVWL0cYjP/U39WoKdXr+nAFTkiHcknON5su9ZU5lBk1EL6lj6SIMi91ramdV9G/FzbM5/gLbJmvH2jSIrHxtRPAQ4ygc5vd1ZD9TCPCAY5swUW1OQD/WkzIqH+ikFoiuI+d6hMoXah6BapO80a2vRz0J+7gOiS+CGOPRJ9S0Gb2wbE3GgQDwKKU0iCIpxtkcSfhcHGaVa/Sm8A7N41Ql9Od1bL2La2JEMZq24Egkq9zj/f5s51HJI0kbiDz6gAIlknAdGrF4QIIecz8jdqRu9Ksb1C9eNrciPDNhLbM4K5YQrM3dvDjZOBrWv9t5V445eQOpNFXEmcOdgrv2Np8PYDmbuc7aO7zMj4TPBw9wujJi2kQV7VHcu78WwdKyzqnRVFlksEHb58ZZ9kXO0rS85/PxDaIoyW9RAvyBKdILpKriem5I2fR1jYJEvlsKBcn7qVfwyRN3k4vT2pkxF+J8NI4+P+NvDd/KlVRMIyXoUyf+23M58tS7aa5SNs3m4XLnI8HO4+JKXImMTRpNoQQs/H6QxRzbwnVZVAJHY6XqMPqAAC/NyqEPfSiRSqRLN16lnkvyNIKDToLOew2/EEoeOACHQgvSEo8GAd1E7UpjPLiQHi89pZ7W2nj6CzvMm575zrqWazqofUeOFI+ThJ7FH7VyBXBNDrWaoKRRN6GUvI5ITH4EXvztiIRfd95fj0isclCTp8L8PiIRQhjnxRiUdtYri+YYEtHBy0PeY3j9UvCW5pK31l5NXEktzgfK8TmCvEZWpQ2kHirMU8ZikUiXijypSg/NONE95F7HpyUNBL+JWoV3YP3l8H6Scsze+rL4TWvNuvKm4+iUupx22Y732kZa9wO3ZXNvr8iKeH+mP+AZ6QttNapmAOLjiESw/x8AFIxjRCFPO3cAAAAASUVORK5CYII="
+    Public Sub FillGradientBeam(ByVal g As Graphics, ByVal Col1 As Color, ByVal Col2 As Color, ByVal rect As Rectangle, ByVal align As GradientAlignment)
+        Dim stored As SmoothingMode = g.SmoothingMode
+        Dim Blend As New ColorBlend
+        g.SmoothingMode = SmoothingMode.HighQuality
+        Select Case align
+            Case GradientAlignment.Vertical
+                Dim PathGradient As New LinearGradientBrush(New Point(rect.X, rect.Y), New Point(rect.X + rect.Width - 1, rect.Y), Color.Black, Color.Black)
+                Blend.Positions = {0, 1 / 2, 1}
+                Blend.Colors = {Col1, Col2, Col1}
+                PathGradient.InterpolationColors = Blend
+                g.FillRectangle(PathGradient, rect)
+            Case GradientAlignment.Horizontal
+                Dim PathGradient As New LinearGradientBrush(New Point(rect.X, rect.Y), New Point(rect.X, rect.Y + rect.Height), Color.Black, Color.Black)
+                Blend.Positions = {0, 1 / 2, 1}
+                Blend.Colors = {Col1, Col2, Col1}
+                PathGradient.InterpolationColors = Blend
+                PathGradient.RotateTransform(0)
+                g.FillRectangle(PathGradient, rect)
+        End Select
+        g.SmoothingMode = stored
+    End Sub
+    Public Sub DrawTextWithShadow(ByVal G As Graphics, ByVal ContRect As Rectangle, ByVal Text As String, ByVal TFont As Font, ByVal TAlign As HorizontalAlignment, ByVal TColor As Color, ByVal BColor As Color)
+        DrawText(G, New Rectangle(ContRect.X + 1, ContRect.Y + 1, ContRect.Width, ContRect.Height), Text, TFont, TAlign, BColor)
+        DrawText(G, ContRect, Text, TFont, TAlign, TColor)
+    End Sub
+    Public Sub FillDualGradPath(ByVal g As Graphics, ByVal Col1 As Color, ByVal Col2 As Color, ByVal rect As Rectangle, ByVal gp As GraphicsPath, ByVal align As GradientAlignment)
+        Dim stored As SmoothingMode = g.SmoothingMode
+        Dim Blend As New ColorBlend
+        g.SmoothingMode = SmoothingMode.HighQuality
+        Select Case align
+            Case GradientAlignment.Vertical
+                Dim PathGradient As New LinearGradientBrush(New Point(rect.X, rect.Y), New Point(rect.X + rect.Width - 1, rect.Y), Color.Black, Color.Black)
+                Blend.Positions = {0, 1 / 2, 1}
+                Blend.Colors = {Col1, Col2, Col1}
+                PathGradient.InterpolationColors = Blend
+                g.FillPath(PathGradient, gp)
+            Case GradientAlignment.Horizontal
+                Dim PathGradient As New LinearGradientBrush(New Point(rect.X, rect.Y), New Point(rect.X, rect.Y + rect.Height), Color.Black, Color.Black)
+                Blend.Positions = {0, 1 / 2, 1}
+                Blend.Colors = {Col1, Col2, Col1}
+                PathGradient.InterpolationColors = Blend
+                PathGradient.RotateTransform(0)
+                g.FillPath(PathGradient, gp)
+        End Select
+        g.SmoothingMode = stored
+    End Sub
+    Public Sub DrawText(ByVal G As Graphics, ByVal ContRect As Rectangle, ByVal Text As String, ByVal TFont As Font, ByVal TAlign As HorizontalAlignment, ByVal TColor As Color)
+        If String.IsNullOrEmpty(Text) Then Return
+        Dim TextSize As Size = G.MeasureString(Text, TFont).ToSize
+        Dim CenteredY As Integer = ContRect.Height \ 2 - TextSize.Height \ 2
+        Select Case TAlign
+            Case HorizontalAlignment.Left
+                Dim sf As New StringFormat
+                sf.LineAlignment = StringAlignment.Near
+                sf.Alignment = StringAlignment.Near
+                G.DrawString(Text, TFont, New SolidBrush(TColor), New Rectangle(ContRect.X, ContRect.Y + ContRect.Height / 2 - TextSize.Height / 2, ContRect.Width, ContRect.Height), sf)
+            Case HorizontalAlignment.Right
+                Dim sf As New StringFormat
+                sf.LineAlignment = StringAlignment.Far
+                sf.Alignment = StringAlignment.Far
+                G.DrawString(Text, TFont, New SolidBrush(TColor), New Rectangle(ContRect.X, ContRect.Y, ContRect.Width, ContRect.Height / 2 + TextSize.Height / 2), sf)
+            Case HorizontalAlignment.Center
+                Dim sf As New StringFormat
+                sf.LineAlignment = StringAlignment.Center
+                sf.Alignment = StringAlignment.Center
+                G.DrawString(Text, TFont, New SolidBrush(TColor), ContRect, sf)
+        End Select
+    End Sub
+    Public Function RoundRect(ByVal Rectangle As Rectangle, ByVal Curve As Integer) As GraphicsPath
+        Dim Path As New GraphicsPath
+        Dim ArcRectangleWidth As Integer = Curve * 2
+        With Path
+            .AddArc(New Rectangle(Rectangle.X, Rectangle.Y, ArcRectangleWidth, ArcRectangleWidth), -180, 90)
+            .AddArc(New Rectangle(Rectangle.Width - ArcRectangleWidth + Rectangle.X, Rectangle.Y, ArcRectangleWidth, ArcRectangleWidth), -90, 90)
+            .AddArc(New Rectangle(Rectangle.Width - ArcRectangleWidth + Rectangle.X, Rectangle.Height - ArcRectangleWidth + Rectangle.Y, ArcRectangleWidth, ArcRectangleWidth), 0, 90)
+            .AddArc(New Rectangle(Rectangle.X, Rectangle.Height - ArcRectangleWidth + Rectangle.Y, ArcRectangleWidth, ArcRectangleWidth), 90, 90)
+            .AddLine(New Point(Rectangle.X, Rectangle.Height - ArcRectangleWidth + Rectangle.Y), New Point(Rectangle.X, Curve + Rectangle.Y))
+        End With
+        Return Path
+    End Function
+    Public Function RoundedTopRect(ByVal Rectangle As Rectangle, ByVal Curve As Integer) As GraphicsPath
+        Dim Path As GraphicsPath = New GraphicsPath()
+        Dim ArcRectangleWidth As Integer = Curve * 2
+        With Path
+            .AddArc(New Rectangle(Rectangle.X, Rectangle.Y, ArcRectangleWidth, ArcRectangleWidth), -180, 90)
+            .AddArc(New Rectangle(Rectangle.Width - ArcRectangleWidth + Rectangle.X, Rectangle.Y, ArcRectangleWidth, ArcRectangleWidth), -90, 90)
+            .AddLine(New Point(Rectangle.X + Rectangle.Width, Rectangle.Y + ArcRectangleWidth), New Point(Rectangle.X + Rectangle.Width, Rectangle.Y + Rectangle.Height))
+            .AddLine(New Point(Rectangle.X, Rectangle.Height + Rectangle.Y), New Point(Rectangle.X, Rectangle.Y + Curve))
+        End With
+        Return Path
+    End Function
+    Public Function CodeToImage(ByVal Code As String) As Image
+        Return Image.FromStream(New System.IO.MemoryStream(Convert.FromBase64String(Code)))
+    End Function
+End Class
+#End Region
